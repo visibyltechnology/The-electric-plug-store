@@ -7,10 +7,10 @@
 
 /* ---- CSS Custom Properties ---- */
 :root {
-  --primary: #FF5E00; /* Vibrant Electric Orange */
-  --primary-dark: #CC4B00;
+  --primary: #FFCE1E;       /* Bright Yellow from logo */
+  --primary-dark: #E6B81A;
   --primary-light: #FF8533;
-  --primary-glow: rgba(255, 94, 0, 0.3);
+  --primary-glow: rgba(255, 206, 30, 0.4);
   
   --black: #060608;
   --dark: #0A0A10;

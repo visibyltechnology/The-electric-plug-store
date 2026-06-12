@@ -11,7 +11,7 @@ const steps = ['Delivery', 'Payment', 'Review'];
 export default function Checkout() {
   const [step, setStep] = useState(0);
   const [placed, setPlaced] = useState(false);
-  const [formData, setFormData] = useState({ fullName: '', phone: '', address: '', city: '', state: 'Lagos', payMethod: 'card' });
+  const [formData, setFormData] = useState({ fullName: '', phone: '', address: '', city: '', state: 'Lagos', payMethod: 'kora' });
 
   const subtotal = checkoutItems.reduce((s, i) => s + i.price * i.qty, 0);
   const delivery = 5000;
@@ -71,14 +71,36 @@ export default function Checkout() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}><CreditCard size={20} color="var(--primary)" /> Payment Method</h3>
                   {[
-                    { id: 'card', label: 'Debit/Credit Card', icon: CreditCard, desc: 'Visa, Mastercard, Verve' },
-                    { id: 'transfer', label: 'Bank Transfer', icon: Truck, desc: 'Pay directly to our account' },
-                    { id: 'cod', label: 'Pay on Delivery', icon: ShieldCheck, desc: 'Cash on delivery' },
+                    { id: 'kora', label: 'Pay with Kora Pay', icon: CreditCard, desc: 'Make Payment' },
+                    { id: 'installment', label: 'Installment Payment', icon: Truck, desc: 'Pay in small installments' },
+                    { id: 'easybuy', label: 'Easy Buy', icon: ShieldCheck, desc: 'Coming Soon', disabled: true },
                   ].map(method => (
-                    <div key={method.id} onClick={() => setFormData(p => ({ ...p, payMethod: method.id }))} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', border: `2px solid ${formData.payMethod === method.id ? 'var(--primary)' : 'var(--dark-border)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', background: formData.payMethod === method.id ? 'rgba(255,94,0,0.05)' : 'var(--dark)', transition: 'var(--transition)' }}>
-                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255,94,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><method.icon size={20} color="var(--primary)" /></div>
-                      <div><div style={{ fontWeight: 700, fontSize: '14px' }}>{method.label}</div><div style={{ fontSize: '12px', color: 'var(--gray-1)' }}>{method.desc}</div></div>
-                      <div style={{ marginLeft: 'auto', width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${formData.payMethod === method.id ? 'var(--primary)' : 'var(--dark-border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{formData.payMethod === method.id && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)' }}></div>}</div>
+                    <div 
+                      key={method.id} 
+                      onClick={() => !method.disabled && setFormData(p => ({ ...p, payMethod: method.id }))} 
+                      style={{ 
+                        display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', 
+                        border: `2px solid ${formData.payMethod === method.id ? 'var(--primary)' : 'var(--dark-border)'}`, 
+                        borderRadius: 'var(--radius-md)', 
+                        cursor: method.disabled ? 'not-allowed' : 'pointer', 
+                        background: formData.payMethod === method.id ? 'rgba(255,206,30,0.05)' : 'var(--dark)', 
+                        opacity: method.disabled ? 0.5 : 1,
+                        transition: 'var(--transition)' 
+                      }}
+                    >
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255,206,30,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <method.icon size={20} color="var(--primary)" />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {method.label}
+                          {method.disabled && <span style={{ fontSize: '10px', background: 'var(--danger)', color: 'var(--white)', padding: '2px 6px', borderRadius: '10px' }}>Soon</span>}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--gray-1)' }}>{method.desc}</div>
+                      </div>
+                      <div style={{ marginLeft: 'auto', width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${formData.payMethod === method.id ? 'var(--primary)' : 'var(--dark-border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {formData.payMethod === method.id && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)' }}></div>}
+                      </div>
                     </div>
                   ))}
                   <div style={{ display: 'flex', gap: '12px' }}>
