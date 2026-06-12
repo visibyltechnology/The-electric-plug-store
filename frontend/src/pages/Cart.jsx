@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Tag, Truck, ShieldCheck } from 'lucide-react';
-import { allProducts } from '../data/productData';
 import { formatCurrency } from './Home';
-
 import { useApp } from '../context/AppContext';
 
 export default function Cart() {
@@ -15,17 +13,17 @@ export default function Cart() {
   const total = subtotal + shipping;
 
   return (
-    <main className="main-content" style={{ padding: '28px 20px' }}>
+    <main className="main-content" style={{ padding: '28px 16px' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <ShoppingCart size={28} color="var(--primary)" /> Shopping Cart
-          <span style={{ fontSize: '16px', color: 'var(--gray-1)', fontWeight: 400 }}>({items.length} items)</span>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <ShoppingCart size={24} color="var(--primary)" /> Shopping Cart
+          <span style={{ fontSize: '15px', color: 'var(--gray-1)', fontWeight: 400 }}>({items.length} items)</span>
         </h1>
 
         {items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 40px', background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-lg)' }}>
-            <ShoppingCart size={80} color="var(--gray-2)" strokeWidth={1} style={{ margin: '0 auto 20px' }} />
-            <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Your cart is empty</h2>
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-lg)' }}>
+            <ShoppingCart size={72} color="var(--gray-2)" strokeWidth={1} style={{ margin: '0 auto 20px' }} />
+            <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Your cart is empty</h2>
             <p style={{ color: 'var(--gray-1)', marginBottom: '24px' }}>Add some products to get started!</p>
             <Link to="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--primary)', color: 'var(--black)', padding: '14px 28px', borderRadius: 'var(--radius-md)', fontWeight: 800 }}>
               Start Shopping <ArrowRight size={18} />
@@ -34,31 +32,45 @@ export default function Cart() {
         ) : (
           <div className="cart-grid">
             {/* Cart Items */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
               {items.map(item => (
-                <div key={item.id} style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '20px', display: 'flex', gap: '20px', alignItems: 'center', transition: 'var(--transition)' }}>
-                  <Link to={`/product/${item.id}`}>
-                    <div style={{ width: '96px', height: '96px', background: 'var(--dark)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                      <img src={item.imgUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }} />
-                    </div>
+                <div key={item.id} className="cart-item-card">
+                  {/* Thumbnail */}
+                  <Link to={`/product/${item.id}`} className="item-thumb">
+                    <img
+                      src={item.imgUrl}
+                      alt={item.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }}
+                      onError={e => { e.target.style.display = 'none'; }}
+                    />
                   </Link>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '11px', color: 'var(--gray-1)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px', marginBottom: '4px' }}>{item.brand}</div>
-                    <Link to={`/product/${item.id}`} style={{ fontSize: '15px', fontWeight: 600, color: 'var(--white)', display: 'block', marginBottom: '10px' }}>{item.name}</Link>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+                  {/* Details */}
+                  <div className="item-details">
+                    <div style={{ fontSize: '10px', color: 'var(--gray-1)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px', marginBottom: '2px' }}>{item.brand}</div>
+                    <Link to={`/product/${item.id}`} className="item-name" style={{ color: 'var(--white)', marginBottom: '10px' }}>{item.name}</Link>
+
+                    {/* Qty + Remove row */}
+                    <div className="cart-row-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-                        <button onClick={() => updateQty(item.id, -1)} style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)', color: 'var(--white)', border: 'none', cursor: 'pointer' }}><Minus size={14} /></button>
-                        <span style={{ minWidth: '40px', textAlign: 'center', fontSize: '15px', fontWeight: 700 }}>{item.qty}</span>
-                        <button onClick={() => updateQty(item.id, 1)} style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)', color: 'var(--white)', border: 'none', cursor: 'pointer' }}><Plus size={14} /></button>
+                        <button onClick={() => updateQty(item.id, -1)} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)', color: 'var(--white)', border: 'none', cursor: 'pointer' }}>
+                          <Minus size={13} />
+                        </button>
+                        <span style={{ minWidth: '36px', textAlign: 'center', fontSize: '14px', fontWeight: 700 }}>{item.qty}</span>
+                        <button onClick={() => updateQty(item.id, 1)} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)', color: 'var(--white)', border: 'none', cursor: 'pointer' }}>
+                          <Plus size={13} />
+                        </button>
                       </div>
-                      <button onClick={() => removeItem(item.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                        <Trash2 size={14} /> Remove
+                      <button onClick={() => removeItem(item.id)} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                        <Trash2 size={13} /> Remove
                       </button>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>{formatCurrency(item.price * item.qty)}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--gray-1)' }}>{formatCurrency(item.price)} each</div>
+
+                  {/* Price */}
+                  <div className="item-price-col">
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 800, color: 'var(--primary)', whiteSpace: 'nowrap' }}>{formatCurrency(item.price * item.qty)}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--gray-1)', whiteSpace: 'nowrap' }}>{formatCurrency(item.price)} each</div>
                   </div>
                 </div>
               ))}
@@ -88,11 +100,11 @@ export default function Cart() {
               {/* Coupon */}
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--dark)', border: '1.5px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '0 12px' }}>
-                    <Tag size={14} color="var(--gray-1)" />
-                    <input type="text" placeholder="Enter coupon code" value={coupon} onChange={e => setCoupon(e.target.value)} style={{ background: 'none', color: 'var(--white)', fontSize: '13px', flex: 1, padding: '10px 0' }} />
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--dark)', border: '1.5px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '0 12px', minWidth: 0 }}>
+                    <Tag size={14} color="var(--gray-1)" style={{ flexShrink: 0 }} />
+                    <input type="text" placeholder="Coupon code" value={coupon} onChange={e => setCoupon(e.target.value)} style={{ background: 'none', color: 'var(--white)', fontSize: '13px', flex: 1, padding: '10px 0', minWidth: 0 }} />
                   </div>
-                  <button style={{ background: 'var(--dark-border)', color: 'var(--white)', padding: '10px 16px', borderRadius: 'var(--radius-sm)', fontWeight: 700, fontSize: '13px', cursor: 'pointer', border: 'none' }}>Apply</button>
+                  <button style={{ background: 'var(--dark-border)', color: 'var(--white)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 700, fontSize: '13px', cursor: 'pointer', border: 'none', flexShrink: 0 }}>Apply</button>
                 </div>
               </div>
 
@@ -106,7 +118,7 @@ export default function Cart() {
               </Link>
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--gray-2)' }}><ShieldCheck size={12} color="var(--success)" /> Secure Checkout</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--gray-2)' }}><ShieldCheck size={12} color="var(--success)" /> Secure</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--gray-2)' }}><Truck size={12} color="var(--info)" /> Fast Delivery</span>
               </div>
             </div>

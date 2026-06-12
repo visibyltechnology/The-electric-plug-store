@@ -1424,6 +1424,82 @@ input, select, textarea { font-family: var(--font-main); outline: none; border: 
 }
 .checkout-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
 
+/* Cart page layout */
+.cart-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Cart item card: prevent overflow on mobile */
+.cart-item-card {
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.cart-item-card .item-thumb {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.cart-item-card .item-details { flex: 1; min-width: 0; }
+.cart-item-card .item-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.cart-item-card .item-price-col {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+@media (max-width: 768px) {
+  /* Stack cart items + summary vertically */
+  .cart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tighten the card on small screens */
+  .cart-item-card {
+    padding: 12px;
+    gap: 10px;
+  }
+  .cart-item-card .item-thumb {
+    width: 64px;
+    height: 64px;
+  }
+
+  /* Make the quantity + remove row wrap nicely */
+  .cart-row-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Prevent price from overflowing right edge */
+  .cart-item-card .item-price-col {
+    min-width: 0;
+    font-size: 15px;
+  }
+}
+
+
+
 /* =============================================
    TOAST NOTIFICATIONS
    ============================================= */
