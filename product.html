@@ -27,7 +27,13 @@
         <input type="search" class="search-input" placeholder="Search for products, brands..." />
         <button class="search-btn">🔍</button>
       </div>
+      <!-- Header Actions -->
       <div class="header-actions">
+        <select class="theme-selector" aria-label="Theme Selector" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 8px; font-size: 13px; font-weight: 500; cursor: pointer; outline: none;">
+          <option value="light">☀️ Light</option>
+          <option value="dark">🌙 Dark</option>
+          <option value="auto">⚙️ Auto</option>
+        </select>
         <button class="hdr-btn" id="cart-btn">
           <span class="icon">🛒</span>
           <span class="label">Cart</span>

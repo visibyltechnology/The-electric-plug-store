@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../pages/Home';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const { user, cartCount, cartTotal, wishlist } = useApp();
@@ -64,6 +65,7 @@ export default function Navbar() {
 
           {/* Desktop: Account Actions */}
           <div className="header-actions desktop-actions">
+            <ThemeToggle />
             <Link to={user ? "/profile" : "/login"} className="hdr-btn" style={{ flexDirection: 'row', gap: '8px', padding: '10px 14px', alignItems: 'center' }}>
               <User size={22} className="icon" />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -174,6 +176,12 @@ export default function Navbar() {
             <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Gamepad2 size={16} /> Gaming</Link>
             <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Camera size={16} /> Photography</Link>
             <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><HomeIcon size={16} /> Home Appliances</Link>
+            
+            <div style={{ height: '1px', background: 'var(--dark-border)', margin: '8px 0' }}></div>
+            <div style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '13px', color: 'var(--gray-1)' }}>Theme</span>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </div>
