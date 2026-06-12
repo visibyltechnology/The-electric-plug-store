@@ -1770,6 +1770,15 @@ input, select, textarea { font-family: var(--font-main); outline: none; border: 
   .cat-icon-wrap { width: 50px; height: 50px; font-size: 20px; }
   .cat-label { font-size: 10px; }
 
+  /* Flash Sale */
+  .flash-header { padding: 10px 12px; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .flash-title { font-size: 16px; }
+  .countdown-label { display: none; } /* Hide 'Ends in:' to save space */
+  .time-unit { min-width: 34px; padding: 4px 6px; }
+  .time-num { font-size: 16px; }
+  .time-label { font-size: 8px; }
+  .time-sep { font-size: 16px; margin-bottom: 2px; }
+
   /* Layout */
   .hero-section { grid-template-columns: 1fr; }
   .hero-sidebar { flex-direction: column; }
