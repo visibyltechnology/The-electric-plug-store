@@ -12,6 +12,7 @@ import { formatCurrency } from '../pages/Home';
 export default function Navbar() {
   const { user, cartCount, cartTotal, wishlist } = useApp();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <>
@@ -32,6 +33,10 @@ export default function Navbar() {
       <header className="site-header">
         <div className="header-inner">
           
+          <div className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ display: 'none', cursor: 'pointer', color: 'var(--white)' }}>
+            <Menu size={24} />
+          </div>
+
           <Link to="/" className="site-logo">
             <div className="logo-img-wrap">
               <img src="/logo.jpeg" alt="The Electric Plug Logo" />
@@ -113,6 +118,23 @@ export default function Navbar() {
           </Link>
         </div>
       </nav>
+
+      {/* 4. MOBILE MENU OVERLAY */}
+      <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`}>
+        <div className="mobile-menu-content">
+          <button className="close-menu-btn" onClick={() => setIsMobileMenuOpen(false)}>×</button>
+          <div className="mobile-menu-header">Menu</div>
+          <div className="mobile-menu-links">
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Menu size={16} /> Shop All Departments</Link>
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Smartphone size={16} /> Phones & Wearables</Link>
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Laptop size={16} /> Computing</Link>
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Tv size={16} /> TV & Audio</Link>
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Gamepad2 size={16} /> Gaming</Link>
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Camera size={16} /> Photography</Link>
+            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><HomeIcon size={16} /> Home Appliances</Link>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

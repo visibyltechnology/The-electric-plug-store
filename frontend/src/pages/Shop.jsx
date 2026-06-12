@@ -8,6 +8,7 @@ export default function Shop() {
   const [activeCategory, setActiveCategory] = useState('Laptops'); // Default to Laptops to show dynamic filters
   const [expandedDept, setExpandedDept] = useState('Computing');
   const [selectedFilters, setSelectedFilters] = useState({});
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   
   // Get attributes for the currently active category, fallback to default
   const activeFilters = categoryAttributes[activeCategory] || defaultAttributes;
@@ -31,7 +32,14 @@ export default function Shop() {
       </div>
 
       <div className="shop-layout">
-        <aside className="shop-sidebar">
+        {/* Mobile Filter Overlay Background */}
+        {isMobileFilterOpen && <div className="mobile-filter-backdrop" onClick={() => setIsMobileFilterOpen(false)}></div>}
+
+        <aside className={`shop-sidebar ${isMobileFilterOpen ? 'open' : ''}`}>
+          <div className="mobile-filter-header">
+            <span>Filter Products</span>
+            <button onClick={() => setIsMobileFilterOpen(false)}>×</button>
+          </div>
           {/* Category Tree Navigation */}
           <div className="filter-group">
             <div className="filter-title">Categories</div>
@@ -159,6 +167,10 @@ export default function Shop() {
           <div className="shop-toolbar">
             <div className="shop-results-count">Showing <span>1-{allProducts.length}</span> of <span>{allProducts.length}</span> results</div>
             
+            <button className="mobile-filter-toggle" onClick={() => setIsMobileFilterOpen(true)}>
+              Filter Products
+            </button>
+
             <div className="shop-sort-wrap">
               <span className="sort-label">Sort by:</span>
               <select className="sort-select">

@@ -1843,7 +1843,6 @@ input, select, textarea { font-family: var(--font-main); outline: none; border: 
 }
 @media (max-width: 768px) {
   .shop-layout { grid-template-columns: 1fr; }
-  .shop-sidebar { display: none; /* In a real app, make it a sliding drawer for mobile */ }
   .shop-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -2080,4 +2079,139 @@ input, select, textarea { font-family: var(--font-main); outline: none; border: 
 
   /* Product detail action sidebar full-width buttons */
   .pas-add-btn, .pas-wish-btn { font-size: 14px; padding: 12px; }
+
+  /* Change grids to 1 column so products don't squish */
+  .products-grid { grid-template-columns: 1fr; }
+  .flash-products { grid-template-columns: 1fr; }
+  .shop-grid { grid-template-columns: 1fr; }
+}
+
+/* =============================================
+   MOBILE POPUPS (Navbar & Shop Filters)
+   ============================================= */
+
+/* Navbar Hamburger */
+.mobile-menu-toggle { display: none; }
+@media (max-width: 768px) {
+  .mobile-menu-toggle { display: block !important; }
+  .cat-nav { display: none; } /* Hide the scrolling nav on mobile */
+}
+
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition);
+}
+.mobile-menu-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mobile-menu-content {
+  position: absolute;
+  top: 0; left: -300px;
+  width: 280px; height: 100%;
+  background: var(--dark-card);
+  border-right: 1px solid var(--dark-border);
+  box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  transition: left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+.mobile-menu-overlay.open .mobile-menu-content {
+  left: 0;
+}
+.mobile-menu-header {
+  padding: 24px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  border-bottom: 1px solid var(--dark-border);
+}
+.close-menu-btn {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: transparent; border: none;
+  color: var(--white); font-size: 28px;
+  cursor: pointer;
+}
+.mobile-menu-links {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+  overflow-y: auto;
+}
+.mobile-menu-links a {
+  padding: 16px 24px;
+  color: var(--gray-1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.mobile-menu-links a:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--primary);
+}
+
+/* Shop Filters Toggle */
+.mobile-filter-toggle {
+  display: none;
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  color: var(--white);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+@media (max-width: 768px) {
+  .mobile-filter-toggle { display: block; width: 100%; margin-bottom: 16px; }
+  
+  .shop-sidebar {
+    position: fixed;
+    top: 0; right: -320px;
+    width: 300px; height: 100vh;
+    background: var(--dark-card);
+    z-index: 10000;
+    overflow-y: auto;
+    transition: right 0.3s ease;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  }
+  .shop-sidebar.open {
+    right: 0;
+  }
+}
+.mobile-filter-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+.mobile-filter-header {
+  display: none;
+}
+@media (max-width: 768px) {
+  .mobile-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .mobile-filter-header button {
+    background: transparent; border: none;
+    color: var(--white); font-size: 24px; cursor: pointer;
+  }
 }
