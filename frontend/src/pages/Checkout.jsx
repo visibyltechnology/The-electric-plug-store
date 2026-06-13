@@ -22,7 +22,7 @@ const INSTALLMENT_OPTIONS = [
 ];
 
 export default function Checkout() {
-  const { user, authLoading, cart, cartTotal, clearCart } = useApp();
+  const { user, authLoading, cart, cartTotal, clearCart, showToast } = useApp();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
@@ -58,11 +58,13 @@ export default function Checkout() {
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
+        showToast('Please log in to proceed to checkout.', 'error');
         navigate('/login?redirect=/checkout');
       } else if (cart.length === 0 && !placed) {
         navigate('/cart');
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, cart, navigate, placed]);
 
   const handleReceiptChange = (e) => {
