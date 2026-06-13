@@ -172,7 +172,7 @@ export default function AdminSettings() {
                         </label>
                       </div>
                     </div>
-                    <div style={{ gridColumn: 'span 2' }}>
+                    <div className="grid-span-2">
                       <label style={labelStyle}>Subtitle</label>
                       <textarea value={slide.subtitle} onChange={e => updateSlide(idx, 'subtitle', e.target.value)} placeholder="Brief description..." style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} />
                     </div>

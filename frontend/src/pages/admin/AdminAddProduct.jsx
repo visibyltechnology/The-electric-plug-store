@@ -9,6 +9,7 @@ import {
   Tag, DollarSign, Star, Upload, X, CheckCircle2, Sparkles, Infinity, Loader2, Package
 } from 'lucide-react';
 import { uploadImage } from '../../utils/cloudinaryService';
+import { useApp } from '../../context/AppContext';
 
 const TAGS = ['', 'Best Seller', 'New Arrival', 'Hot Deal', 'Top Rated', 'Trending', 'Clearance', 'Premium', 'Limited'];
 
@@ -30,9 +31,10 @@ const inputStyle = {
   fontWeight: 500, color: 'var(--white)', outline: 'none', transition: 'all 0.2s', boxSizing: 'border-box'
 };
 
-export default function ProductForm() {
+export default function AdminAddProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useApp();
   const isEditing = !!id;
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -158,7 +160,7 @@ export default function ProductForm() {
   };
 
   const handleSetFeaturedPosition = () => {
-    if (!positionInput || isNaN(positionInput)) { alert('Please enter a valid position.'); return; }
+    if (!positionInput || isNaN(positionInput)) { showToast('Please enter a valid position.', 'error'); return; }
     setFormData(p => ({ ...p, featured: true, featuredPosition: positionInput }));
     setShowFeaturedModal(false);
   };

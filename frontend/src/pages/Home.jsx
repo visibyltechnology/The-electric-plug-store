@@ -238,6 +238,7 @@ const heroSlides = [
 ];
 
 export default function Home() {
+  const { showToast } = useApp();
   const [data, setData] = useState(productData);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -555,7 +556,7 @@ export default function Home() {
         <div className="newsletter-icon" style={{ display: 'flex', color: 'var(--primary)', marginBottom: '16px' }}><Mail size={48} strokeWidth={1.5} /></div>
         <h2 className="newsletter-title">Get <span>Exclusive Deals</span> in Your Inbox</h2>
         <p className="newsletter-sub">Subscribe to our newsletter and be the first to know about flash sales, new arrivals and exclusive discounts.</p>
-        <form className="newsletter-form" onSubmit={(e) => { e.preventDefault(); alert('Subscribed!'); }}>
+        <form className="newsletter-form" onSubmit={(e) => { e.preventDefault(); showToast('Subscribed to newsletter!'); }}>
           <input
             type="email"
             className="newsletter-input"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { allProducts as staticProducts } from '../data/productData';
 import { getProducts } from '../utils/productService';
 import { ProductCard } from './Home';
@@ -6,6 +7,9 @@ import { categoryTaxonomy, categorySpecs } from '../data/taxonomy';
 import { Loader2, SlidersHorizontal, X } from 'lucide-react';
 
 export default function Shop() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q') || '';
+
   const [view, setView] = useState('grid');
   const [activeCategory, setActiveCategory] = useState(null);
   const [expandedDept, setExpandedDept] = useState(null);
@@ -67,6 +71,10 @@ export default function Shop() {
     setPriceMin('');
     setPriceMax('');
     setActiveCategory(null);
+    if (searchParams.has('q')) {
+      searchParams.delete('q');
+      setSearchParams(searchParams);
+    }
   };
 
   const activeFilterCount = Object.values(selectedFilters).flat().length;
@@ -89,7 +97,25 @@ export default function Shop() {
     const matchMin = !priceMin || p.price >= Number(priceMin);
     const matchMax = !priceMax || p.price <= Number(priceMax);
 
-    return matchCat && matchBrand && matchSpecs && matchMin && matchMax;
+    // Advanced search logic across name, brand, taxonomy, and specs
+    let matchSearch = true;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const searchableText = [
+        p.name,
+        p.brand,
+        p.department,
+        p.category,
+        p.subcategory,
+        ...(p.specs ? Object.values(p.specs) : []),
+        ...(p.colors ? p.colors.map(c => c.name) : []),
+        ...(p.features || [])
+      ].filter(Boolean).join(' ').toLowerCase();
+      
+      matchSearch = searchableText.includes(q);
+    }
+
+    return matchCat && matchBrand && matchSpecs && matchMin && matchMax && matchSearch;
   }).sort((a, b) => {
     if (sortBy === 'price_asc') return a.price - b.price;
     if (sortBy === 'price_desc') return b.price - a.price;
@@ -255,6 +281,7 @@ export default function Shop() {
           <div className="shop-toolbar">
             <div className="shop-results-count">
               Showing <span>{filteredProducts.length}</span> of <span>{products.length}</span> products
+              {searchQuery && <span style={{ marginLeft: '6px' }}>for "<strong style={{ color: 'var(--primary)' }}>{searchQuery}</strong>"</span>}
               {activeCategory && <span style={{ color: 'var(--primary)', marginLeft: '6px' }}>in {activeCategory}</span>}
             </div>
 

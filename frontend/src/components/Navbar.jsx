@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Truck, Zap, ShieldCheck, PhoneCall, Search, 
   User, Heart, ShoppingCart, 
@@ -14,6 +14,16 @@ export default function Navbar() {
   const { user, cartCount, cartTotal, wishlist } = useApp();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMobileMenuOpen(false);
+    }
+  };
 
   return (
     <>
@@ -46,7 +56,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop: Search Bar (centre) */}
-          <div className={`search-bar desktop-search ${isSearchFocused ? 'focused' : ''}`} style={{ transition: 'all 0.3s ease', boxShadow: isSearchFocused ? '0 0 0 3px rgba(255, 206, 30, 0.4)' : 'none', border: isSearchFocused ? '1.5px solid var(--primary)' : '1.5px solid var(--dark-border)' }}>
+          <form onSubmit={handleSearch} className={`search-bar desktop-search ${isSearchFocused ? 'focused' : ''}`} style={{ transition: 'all 0.3s ease', boxShadow: isSearchFocused ? '0 0 0 3px rgba(255, 206, 30, 0.4)' : 'none', border: isSearchFocused ? '1.5px solid var(--primary)' : '1.5px solid var(--dark-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', background: 'transparent', borderRight: '1px solid var(--dark-border)', padding: '0 14px', cursor: 'pointer', color: 'var(--gray-1)' }}>
               <span style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>All Categories</span>
               <ChevronDown size={14} style={{ marginLeft: '6px' }} />
@@ -55,13 +65,15 @@ export default function Navbar() {
               type="search" 
               className="search-input" 
               placeholder="Search for laptops, phones, TVs..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
             />
-            <button className="search-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button type="submit" className="search-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Search size={18} />
             </button>
-          </div>
+          </form>
 
           {/* Desktop: Account Actions */}
           <div className="header-actions desktop-actions">
@@ -124,18 +136,20 @@ export default function Navbar() {
 
         {/* Mobile: Search bar row below logo row */}
         <div className="mobile-search-row">
-          <div className={`search-bar ${isSearchFocused ? 'focused' : ''}`} style={{ transition: 'all 0.3s ease', boxShadow: isSearchFocused ? '0 0 0 3px rgba(255, 206, 30, 0.4)' : 'none', border: isSearchFocused ? '1.5px solid var(--primary)' : '1.5px solid var(--dark-border)' }}>
+          <form onSubmit={handleSearch} className={`search-bar ${isSearchFocused ? 'focused' : ''}`} style={{ transition: 'all 0.3s ease', boxShadow: isSearchFocused ? '0 0 0 3px rgba(255, 206, 30, 0.4)' : 'none', border: isSearchFocused ? '1.5px solid var(--primary)' : '1.5px solid var(--dark-border)' }}>
             <input 
               type="search" 
               className="search-input" 
               placeholder="Search for laptops, phones, TVs..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
             />
-            <button className="search-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button type="submit" className="search-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Search size={18} />
             </button>
-          </div>
+          </form>
         </div>
       </header>
 

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 const AppContext = createContext();
 
@@ -11,6 +12,14 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null); // null means not logged in
   const [authLoading, setAuthLoading] = useState(true);
   
+  // Toast State
+  const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ show: true, msg, type });
+    setTimeout(() => setToast(t => ({ ...t, show: false })), 3000);
+  };
+
   // For demo, initialize with 2 items in cart and 3 in wishlist to match initial UI loosely
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
@@ -81,6 +90,7 @@ export const AppProvider = ({ children }) => {
       }
       return [...prev, { ...product, qty }];
     });
+    showToast(`${product.name || 'Item'} added to cart!`);
   };
 
   const updateCartQty = (id, delta) => {
@@ -130,12 +140,38 @@ export const AppProvider = ({ children }) => {
     wishlist,
     toggleWishlist,
     removeFromWishlist,
-    isInWishlist
+    isInWishlist,
+    showToast
   };
 
   return (
     <AppContext.Provider value={contextValue}>
       {children}
+      {/* Global Toast UI */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed',
+          bottom: '30px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 99999,
+          background: toast.type === 'error' ? 'rgba(255,61,0,0.95)' : 'rgba(0,230,118,0.95)',
+          color: toast.type === 'error' ? '#fff' : '#000',
+          padding: '14px 24px',
+          borderRadius: 'var(--radius-md)',
+          fontWeight: 700,
+          fontSize: '15px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          backdropFilter: 'blur(8px)',
+          animation: 'slideUpFade 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+          {toast.msg}
+        </div>
+      )}
     </AppContext.Provider>
   );
 };

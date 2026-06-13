@@ -27,7 +27,7 @@ export default function AdminHome() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         {stats.map(s => (
           <Link key={s.label} to={s.link} style={{ textDecoration: 'none' }}>
             <div style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '24px', display: 'flex', alignItems: 'center', gap: '16px', transition: 'var(--transition)' }}
@@ -48,7 +48,7 @@ export default function AdminHome() {
 
       {/* Quick Actions */}
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 800, marginBottom: '16px' }}>Quick Actions</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
         {quickActions.map(a => (
           <Link key={a.label} to={a.link} style={{ textDecoration: 'none' }}>
             <div style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', transition: 'var(--transition)' }}

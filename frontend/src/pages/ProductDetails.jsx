@@ -251,7 +251,6 @@ export default function ProductDetails() {
             <button className="pas-add-btn" onClick={() => {
               const productToAdd = selectedColor ? { ...product, selectedColor } : product;
               addToCart(productToAdd, qty);
-              alert(`${qty}x ${product.name} ${selectedColor ? `(${selectedColor})` : ''} added to cart!`);
             }}>
               <ShoppingCart size={20} /> Add to Cart
             </button>

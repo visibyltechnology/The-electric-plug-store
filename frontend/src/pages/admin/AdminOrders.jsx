@@ -5,6 +5,7 @@ import {
   ClipboardList, Package, CheckCircle, Clock, AlertCircle,
   Search, ChevronDown, ChevronUp, Loader2, Truck
 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 const STATUS_COLORS = {
   Pending: { bg: 'rgba(255,206,30,0.1)', color: 'var(--warning)', border: 'rgba(255,206,30,0.3)' },
@@ -21,6 +22,7 @@ const STATUS_OPTIONS = ['Pending', 'Pending Verification', 'Processing', 'In Tra
 const fmt = n => '₦' + Math.ceil(n || 0).toLocaleString('en-NG');
 
 function OrderCard({ order }) {
+  const { showToast } = useApp();
   const [expanded, setExpanded] = useState(false);
   const [updating, setUpdating] = useState(false);
   const s = STATUS_COLORS[order.status] || STATUS_COLORS['Pending'];
@@ -29,8 +31,9 @@ function OrderCard({ order }) {
     setUpdating(true);
     try {
       await updateDoc(doc(db, 'orders', order.id), { status: newStatus });
+      showToast(`Order status updated to ${newStatus}`);
     } catch (e) {
-      alert('Failed to update status.');
+      showToast('Failed to update status.', 'error');
     } finally {
       setUpdating(false);
     }
@@ -77,7 +80,7 @@ function OrderCard({ order }) {
 
       {/* Expanded Detail */}
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--dark-border)', padding: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div style={{ borderTop: '1px solid var(--dark-border)', padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px' }}>
           {/* Items */}
           <div>
             <h4 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--gray-1)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>Items Ordered</h4>

@@ -108,7 +108,7 @@ export default function AdminUsers() {
                 {/* Expanded Details */}
                 {isOpen && (
                   <div style={{ borderTop: '1px solid var(--dark-border)', padding: '18px 20px', background: 'rgba(255,255,255,0.02)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' }}>
                       <div>
                         <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--gray-2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Mail size={11} /> Email</div>
                         <div style={{ fontSize: '13px', fontWeight: 600, wordBreak: 'break-all' }}>{u.email}</div>

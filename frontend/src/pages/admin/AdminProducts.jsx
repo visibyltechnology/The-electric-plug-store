@@ -151,7 +151,7 @@ export default function AdminProducts() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {stats.map(s => (
           <div key={s.label} style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'var(--font-display)', color: s.color }}>{s.value}</div>

@@ -2512,6 +2512,11 @@ input, select, textarea { font-family: var(--font-main); outline: none; border: 
   to { transform: rotate(360deg); }
 }
 
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translate(-50%, 20px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* =============================================
    RESPONSIVE UTILITIES & ADMIN MOBILE
    ============================================= */
@@ -2566,16 +2571,28 @@ input, select, textarea { font-family: var(--font-main); outline: none; border: 
   box-sizing: border-box;
 }
 
-/* Responsive grid helpers */
-.admin-main-content .responsive-grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+/* Extend responsive grids with min-width: 0 for proper containment */
+.responsive-grid-2,
+.responsive-grid-3,
+.responsive-grid-4,
+.admin-settings-layout {
+  width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 900px) {
-  .admin-main-content .responsive-grid-2 {
-    grid-template-columns: 1fr;
+.responsive-grid-2 > *,
+.responsive-grid-3 > *,
+.responsive-grid-4 > * {
+  min-width: 0;
+}
+
+/* On small screens, span-2 columns fall back to normal */
+.grid-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .grid-span-2 {
+    grid-column: span 1;
   }
 }
-

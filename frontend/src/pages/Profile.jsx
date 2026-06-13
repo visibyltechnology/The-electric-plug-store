@@ -4,23 +4,28 @@ import { User, Package, Heart, MapPin, Bell, Settings, LogOut, ChevronRight, Sho
 import { uploadImage } from '../utils/cloudinaryService';
 import { useApp } from '../context/AppContext';
 import { db } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { formatCurrency } from './Home';
 
-const mockOrders = [
-  { id: '#TEP-001', product: 'Samsung Galaxy S24 Ultra', status: 'Delivered', date: 'Jun 8, 2026', amount: '₦1,550,000', img: '/images/phone.png' },
-  { id: '#TEP-002', product: 'HP Envy x360 Laptop', status: 'In Transit', date: 'Jun 10, 2026', amount: '₦1,150,000', img: '/images/laptop.png' },
-  { id: '#TEP-003', product: 'Sony PlayStation 5', status: 'Processing', date: 'Jun 12, 2026', amount: '₦850,000', img: '/images/ps5.png' },
-];
-
-const statusColor = { Delivered: '#00E676', 'In Transit': '#00B0FF', Processing: '#FFC400' };
+const STATUS_COLORS = {
+  Delivered: { color: '#00E676', bg: 'rgba(0,230,118,0.12)' },
+  'In Transit': { color: '#00B0FF', bg: 'rgba(0,176,255,0.12)' },
+  Processing: { color: '#FFC400', bg: 'rgba(255,196,0,0.12)' },
+  'Pending Verification': { color: '#FF9800', bg: 'rgba(255,152,0,0.12)' },
+  Pending: { color: '#FFC400', bg: 'rgba(255,196,0,0.12)' },
+  Cancelled: { color: '#FF3D00', bg: 'rgba(255,61,0,0.12)' },
+  'Payment Failed': { color: '#ff1744', bg: 'rgba(255,23,68,0.12)' },
+};
 
 export default function Profile() {
-  const { user, logout, wishlist } = useApp();
+  const { user, logout, wishlist, showToast } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('orders');
   const [profileImage, setProfileImage] = useState(user?.avatar || null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Settings form state — pre-filled from the logged-in user
   const [settingsForm, setSettingsForm] = useState({
@@ -45,6 +50,28 @@ export default function Profile() {
     }
   }, [user]);
 
+  // Fetch real orders for this user from Firestore
+  useEffect(() => {
+    if (!user?.uid) return;
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
+      try {
+        const q = query(
+          collection(db, 'orders'),
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        console.error('Error fetching orders:', e);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [user]);
+
   // If not logged in, redirect to login
   useEffect(() => {
     if (!user) navigate('/login');
@@ -61,9 +88,10 @@ export default function Profile() {
       // Save the new avatar URL to Firestore
       if (user?.uid) {
         await updateDoc(doc(db, 'users', user.uid), { avatar: imageUrl });
+        showToast('Profile image updated successfully!');
       }
     } catch (error) {
-      alert('Failed to upload image. Please try again.');
+      showToast('Failed to upload image. Please try again.', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -81,9 +109,10 @@ export default function Profile() {
         // email is managed by Firebase Auth — don't allow edit here
       });
       setSettingsSaved(true);
+      showToast('Account settings saved successfully!');
       setTimeout(() => setSettingsSaved(false), 3000);
     } catch (err) {
-      alert('Failed to save changes. Please try again.');
+      showToast('Failed to save changes. Please try again.', 'error');
     } finally {
       setIsSavingSettings(false);
     }
@@ -189,28 +218,48 @@ export default function Profile() {
           {activeTab === 'orders' && (
             <div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 800, marginBottom: '20px' }}>My Orders</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {mockOrders.map(order => (
-                  <div key={order.id} style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', transition: 'var(--transition)' }}>
-                    <div style={{ width: '72px', height: '72px', background: 'var(--dark)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                      <img src={order.img} alt={order.product} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={e => { e.target.style.display='none'; }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: 700 }}>{order.product}</h3>
-                        <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>{order.amount}</span>
+              {ordersLoading ? (
+                <div style={{ textAlign: 'center', padding: '60px' }}>
+                  <Loader2 className="spinner" size={40} color="var(--primary)" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ color: 'var(--gray-1)' }}>Loading your orders...</p>
+                </div>
+              ) : orders.length === 0 ? (
+                <div style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '60px', textAlign: 'center' }}>
+                  <Package size={56} color="var(--gray-2)" style={{ margin: '0 auto 16px' }} />
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>No orders yet</h3>
+                  <p style={{ color: 'var(--gray-1)', marginBottom: '20px' }}>You haven't placed any orders yet.</p>
+                  <Link to="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--primary)', color: 'var(--black)', padding: '12px 24px', borderRadius: 'var(--radius-md)', fontWeight: 700 }}><ShoppingCart size={16} /> Start Shopping</Link>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {orders.map(order => {
+                    const firstItem = order.items?.[0];
+                    const itemImg = firstItem?.imgUrl || firstItem?.image || firstItem?.images?.[0] || null;
+                    const itemName = firstItem?.name || 'Order';
+                    const itemCount = (order.items?.length || 1);
+                    const date = order.createdAt?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) || '—';
+                    const s = STATUS_COLORS[order.status] || STATUS_COLORS['Pending'];
+                    const shortId = order.id?.slice(0, 8).toUpperCase();
+                    return (
+                      <div key={order.id} style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', transition: 'var(--transition)' }}>
+                        <div style={{ width: '72px', height: '72px', background: 'var(--dark)', borderRadius: 'var(--radius-sm)', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {itemImg ? <img src={itemImg} alt={itemName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none'; }} /> : <Package size={28} color="var(--gray-2)" />}
+                        </div>
+                        <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                            <h3 style={{ fontSize: '15px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemName}{itemCount > 1 ? ` +${itemCount - 1} more` : ''}</h3>
+                            <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-display)', flexShrink: 0 }}>{formatCurrency(order.totalAmount)}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-1)' }}>#{shortId} · {date}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: s.color, background: s.bg, padding: '3px 10px', borderRadius: '20px' }}>{order.status || 'Pending'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--gray-1)' }}>{order.id} · {order.date}</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: statusColor[order.status], background: `${statusColor[order.status]}18`, padding: '3px 10px', borderRadius: '20px' }}>{order.status}</span>
-                      </div>
-                    </div>
-                    <button style={{ flexShrink: 0, background: 'transparent', border: '1px solid var(--dark-border)', color: 'var(--gray-1)', padding: '8px 16px', borderRadius: 'var(--radius-sm)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'var(--transition)' }} onMouseEnter={e => { e.target.style.borderColor='var(--primary)'; e.target.style.color='var(--primary)'; }} onMouseLeave={e => { e.target.style.borderColor='var(--dark-border)'; e.target.style.color='var(--gray-1)'; }}>
-                      View Details
-                    </button>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

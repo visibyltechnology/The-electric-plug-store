@@ -9,6 +9,18 @@ import { uploadImage } from '../utils/cloudinaryService';
 
 const steps = ['Delivery', 'Payment', 'Review'];
 
+const INSTALLMENT_OPTIONS = [
+  ...Array.from({ length: 11 }, (_, i) => ({
+    id: `${i + 2}_weeks`,
+    label: `${i + 2} Weeks`,
+    type: 'weekly',
+    duration: i + 2,
+    interestRate: (i + 2) * 0.02 // 2% per week
+  })),
+  { id: '2_months', label: '2 Months', type: 'monthly', duration: 2, interestRate: 0.10 }, // 10%
+  { id: '6_months', label: '6 Months', type: 'monthly', duration: 6, interestRate: 0.30 }  // 30%
+];
+
 export default function Checkout() {
   const { user, cart, cartTotal, clearCart } = useApp();
   const navigate = useNavigate();
@@ -25,7 +37,8 @@ export default function Checkout() {
     address: '', 
     city: '', 
     state: 'Lagos', 
-    payMethod: 'bank_transfer' 
+    payMethod: 'bank_transfer',
+    installmentPlan: '4_weeks'
   });
 
   const [receiptFile, setReceiptFile] = useState(null);
@@ -34,7 +47,13 @@ export default function Checkout() {
   const [termsAccepted, setTermsAccepted] = useState({ terms: false, privacy: false });
 
   const delivery = 5000;
-  const total = cartTotal + delivery;
+  const subTotal = cartTotal + delivery;
+
+  const activePlan = INSTALLMENT_OPTIONS.find(p => p.id === formData.installmentPlan) || INSTALLMENT_OPTIONS[0];
+  const installmentInterest = formData.payMethod === 'installment' ? Math.floor(subTotal * activePlan.interestRate) : 0;
+  const grandTotal = subTotal + installmentInterest;
+  const depositAmount = formData.payMethod === 'installment' ? Math.floor(grandTotal * 0.30) : grandTotal;
+  const recurringAmount = formData.payMethod === 'installment' ? Math.floor((grandTotal - depositAmount) / activePlan.duration) : 0;
 
   useEffect(() => {
     if (cart.length === 0 && !placed) {
@@ -53,7 +72,7 @@ export default function Checkout() {
   };
 
   const handlePlaceOrderClick = () => {
-    if (formData.payMethod === 'bank_transfer' && !receiptFile) {
+    if ((formData.payMethod === 'bank_transfer' || formData.payMethod === 'installment') && !receiptFile) {
       setError('Please upload your payment receipt before placing the order.');
       return;
     }
@@ -82,10 +101,14 @@ export default function Checkout() {
         customerEmail: user?.email || '',
         deliveryAddress: `${formData.address}, ${formData.city}, ${formData.state}`,
         items: cart,
-        subtotal: cartTotal,
+        total: grandTotal,
+        subTotal: subTotal,
         deliveryFee: delivery,
-        totalAmount: total,
-        paymentMethod: formData.payMethod,
+        installmentInterest,
+        payMethod: formData.payMethod,
+        installmentPlan: formData.payMethod === 'installment' ? formData.installmentPlan : null,
+        depositAmount: formData.payMethod === 'installment' ? depositAmount : null,
+        recurringAmount: formData.payMethod === 'installment' ? recurringAmount : null,
         status: 'Pending Verification',
         receiptUrl: receiptUrl,
         createdAt: new Date(),
@@ -93,7 +116,7 @@ export default function Checkout() {
 
       await addDoc(collection(db, 'orders'), orderData);
       
-      setFinalTotal(total);
+      setFinalTotal(grandTotal);
       clearCart();
       setPlaced(true);
     } catch (err) {
@@ -238,6 +261,78 @@ export default function Checkout() {
 
                       <div>
                         <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>Upload Payment Receipt <span style={{ color: 'var(--danger)' }}>*</span></label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <label style={{ flex: 1, background: 'var(--dark-card)', border: '1.5px dashed var(--dark-border)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center', cursor: 'pointer', transition: 'var(--transition)' }}>
+                            <Upload size={20} color="var(--primary)" style={{ margin: '0 auto 8px' }} />
+                            <span style={{ fontSize: '13px', color: 'var(--gray-1)' }}>Click to upload screenshot</span>
+                            <input type="file" accept="image/*" onChange={handleReceiptChange} style={{ display: 'none' }} />
+                          </label>
+                          {receiptPreview && (
+                            <div style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--dark-border)' }}>
+                              <img src={receiptPreview} alt="Receipt preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.payMethod === 'installment' && (
+                    <div style={{ background: 'var(--dark)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '8px' }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Truck size={18} /> Installment Plan Details
+                      </h4>
+                      <p style={{ fontSize: '13px', color: 'var(--gray-1)', marginBottom: '16px' }}>
+                        Choose a payment plan that works for you. A 30% upfront deposit is required before shipping.
+                      </p>
+
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--white)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Duration</label>
+                        <select 
+                          value={formData.installmentPlan}
+                          onChange={(e) => setFormData(p => ({ ...p, installmentPlan: e.target.value }))}
+                          style={{ width: '100%', background: 'var(--black)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: '14px', color: 'var(--white)', outline: 'none' }}
+                        >
+                          <optgroup label="Weekly Plans (2% interest/week)">
+                            {INSTALLMENT_OPTIONS.filter(o => o.type === 'weekly').map(opt => (
+                              <option key={opt.id} value={opt.id}>{opt.label} ({(opt.interestRate * 100).toFixed(0)}% Interest)</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Monthly Plans (5% interest/month)">
+                            {INSTALLMENT_OPTIONS.filter(o => o.type === 'monthly').map(opt => (
+                              <option key={opt.id} value={opt.id}>{opt.label} ({(opt.interestRate * 100).toFixed(0)}% Interest)</option>
+                            ))}
+                          </optgroup>
+                        </select>
+                      </div>
+                      
+                      <div style={{ background: 'var(--black)', padding: '16px', borderRadius: 'var(--radius-sm)', display: 'grid', gap: '12px', border: '1px solid var(--dark-border)', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--gray-1)', fontSize: '13px' }}>Subtotal (inc. Delivery)</span>
+                          <span style={{ fontWeight: 700, fontSize: '14px' }}>{formatCurrency(subTotal)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--warning)', fontSize: '13px' }}>Interest ({(activePlan.interestRate * 100).toFixed(0)}%)</span>
+                          <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--warning)' }}>+{formatCurrency(installmentInterest)}</span>
+                        </div>
+                        <div style={{ height: '1px', background: 'var(--dark-border)', margin: '4px 0' }}></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--white)', fontSize: '14px', fontWeight: 800 }}>Total Payable</span>
+                          <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--primary)' }}>{formatCurrency(grandTotal)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                          <span style={{ color: 'var(--success)', fontSize: '13px', fontWeight: 700 }}>Upfront Deposit (30%)</span>
+                          <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--success)' }}>{formatCurrency(depositAmount)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--gray-1)', fontSize: '13px' }}>Remaining ({activePlan.duration} payments)</span>
+                          <span style={{ fontWeight: 700, fontSize: '14px' }}>{formatCurrency(recurringAmount)} / {activePlan.type === 'weekly' ? 'week' : 'month'}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>Upload Initial Deposit Receipt <span style={{ color: 'var(--danger)' }}>*</span></label>
+                        <p style={{ fontSize: '12px', color: 'var(--gray-1)', marginBottom: '12px' }}>Please transfer your deposit of <strong>{formatCurrency(depositAmount)}</strong> to Wema Bank (0125986348) - The electric plug enterprises.</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <label style={{ flex: 1, background: 'var(--dark-card)', border: '1.5px dashed var(--dark-border)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center', cursor: 'pointer', transition: 'var(--transition)' }}>
                             <Upload size={20} color="var(--primary)" style={{ margin: '0 auto 8px' }} />
