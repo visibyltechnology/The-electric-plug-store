@@ -8,13 +8,15 @@ import {
 
 const STATUS_COLORS = {
   Pending: { bg: 'rgba(255,206,30,0.1)', color: 'var(--warning)', border: 'rgba(255,206,30,0.3)' },
+  'Pending Verification': { bg: 'rgba(255,152,0,0.1)', color: '#FF9800', border: 'rgba(255,152,0,0.3)' },
   Processing: { bg: 'rgba(0,176,255,0.1)', color: 'var(--info)', border: 'rgba(0,176,255,0.3)' },
   'In Transit': { bg: 'rgba(0,176,255,0.12)', color: '#29b6f6', border: 'rgba(0,176,255,0.3)' },
   Delivered: { bg: 'rgba(0,230,118,0.1)', color: 'var(--success)', border: 'rgba(0,230,118,0.3)' },
   Cancelled: { bg: 'rgba(255,61,0,0.1)', color: 'var(--danger)', border: 'rgba(255,61,0,0.3)' },
+  'Payment Failed': { bg: 'rgba(255,0,0,0.1)', color: '#ff1744', border: 'rgba(255,0,0,0.3)' },
 };
 
-const STATUS_OPTIONS = ['Pending', 'Processing', 'In Transit', 'Delivered', 'Cancelled'];
+const STATUS_OPTIONS = ['Pending', 'Pending Verification', 'Processing', 'In Transit', 'Delivered', 'Cancelled', 'Payment Failed'];
 
 const fmt = n => '₦' + Math.ceil(n || 0).toLocaleString('en-NG');
 
@@ -109,9 +111,23 @@ function OrderCard({ order }) {
             </select>
 
             {order.deliveryAddress && (
-              <div style={{ background: 'var(--dark)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '14px' }}>
+              <div style={{ background: 'var(--dark)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '12px' }}>
                 <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--gray-2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}><Truck size={12} /> Delivery Address</div>
                 <p style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--gray-1)', margin: 0 }}>{order.deliveryAddress}</p>
+              </div>
+            )}
+
+            {order.receiptUrl && (
+              <div style={{ background: 'rgba(0,176,255,0.05)', border: '1px solid var(--info)', borderRadius: 'var(--radius-sm)', padding: '14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--info)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Payment Receipt Uploaded</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '60px', height: '60px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--dark-border)' }}>
+                    <img src={order.receiptUrl} alt="Receipt Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <a href={order.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--white)', background: 'var(--primary)', color: 'var(--black)', padding: '8px 16px', borderRadius: '20px', textDecoration: 'none' }}>
+                    View Full Receipt
+                  </a>
+                </div>
               </div>
             )}
 

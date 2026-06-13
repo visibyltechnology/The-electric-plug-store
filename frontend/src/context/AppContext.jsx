@@ -89,6 +89,8 @@ export const AppProvider = ({ children }) => {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
+  const clearCart = () => setCart([]);
+
   const cartTotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
   const cartCount = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
 
@@ -118,6 +120,7 @@ export const AppProvider = ({ children }) => {
     addToCart,
     updateCartQty,
     removeFromCart,
+    clearCart,
     cartTotal,
     cartCount,
     wishlist,
