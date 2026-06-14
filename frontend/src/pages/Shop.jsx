@@ -5,6 +5,7 @@ import { getProducts } from '../utils/productService';
 import { ProductCard } from './Home';
 import { categoryTaxonomy, categorySpecs } from '../data/taxonomy';
 import { Loader2, SlidersHorizontal, X } from 'lucide-react';
+import SEO from '../components/SEO';
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -126,6 +127,13 @@ export default function Shop() {
 
   return (
     <main className="main-content" id="main">
+      <SEO
+        title={activeCategory ? `Buy ${activeCategory} in Nigeria` : searchQuery ? `"${searchQuery}" - Electronics Nigeria` : 'Shop All Electronics in Nigeria'}
+        description={activeCategory
+          ? `Shop ${activeCategory} online in Nigeria at The Electric Plug. Best prices, fast delivery nationwide, flexible installment plans.`
+          : 'Browse our full collection of smartphones, laptops, TVs, gaming consoles, home appliances and more. Fast delivery across Nigeria.'}
+        url="/shop"
+      />
       <div className="section-header">
         <h1 className="section-title">Shop <span className="title-accent">Electronics</span></h1>
         <div className="text-primary" style={{ fontSize: '13px', fontWeight: 600 }}>Home / Shop{activeCategory ? ` / ${activeCategory}` : ''}</div>

@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import SEO from '../components/SEO';
 
 export const formatCurrency = (amount) => '₦' + (amount || 0).toLocaleString('en-NG');
 
@@ -63,8 +64,8 @@ export const ProductCard = ({ product }) => {
           <div className="product-brand">{product.brand}</div>
           <h3 className="product-name" title={product.name}>{product.name}</h3>
           <div className="product-rating">
-            <span className="stars" style={{ color: 'var(--primary)', fontSize: '12px', letterSpacing: '2px' }}>{'★'.repeat(Math.floor(product.rating))}{'☆'.repeat(5 - Math.floor(product.rating))}</span>
-            <span className="rating-count" style={{ marginLeft: '4px' }}>({product.reviews})</span>
+            <span className="stars" style={{ color: 'var(--primary)', fontSize: '12px', letterSpacing: '2px' }}>{'★'.repeat(Math.max(0, Math.min(5, Math.floor(Number(product.rating) || 0))))}{'☆'.repeat(Math.max(0, 5 - Math.min(5, Math.floor(Number(product.rating) || 0))))}</span>
+            <span className="rating-count" style={{ marginLeft: '4px' }}>({Number(product.reviews) || 0})</span>
           </div>
           <div className="product-price-wrap">
             {priceHtml}
@@ -239,7 +240,14 @@ const heroSlides = [
 
 export default function Home() {
   const { showToast } = useApp();
-  const [data, setData] = useState(productData);
+  const [data, setData] = useState({
+    flashSale: [],
+    bestSellers: [],
+    newArrivals: [],
+    recommended: [],
+    featured: [],
+    all: []
+  });
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -253,7 +261,8 @@ export default function Home() {
             bestSellers: dbProducts.slice(0, 6),
             newArrivals: dbProducts.slice(0, 10),
             recommended: dbProducts.slice(0, 10),
-            featured: dbProducts.slice(0, 8)
+            featured: dbProducts.slice(0, 8),
+            all: dbProducts
           });
         }
       } catch (err) {
@@ -271,6 +280,11 @@ export default function Home() {
   }, [currentSlide]);
   return (
     <main className="main-content" id="main">
+      <SEO
+        title="Shop Premium Electronics in Nigeria"
+        description="Buy the latest iPhones, Samsung Galaxy, laptops, TVs, gaming consoles, air conditioners and more at The Electric Plug. Fast delivery across Nigeria with flexible installment payment plans."
+        url="/"
+      />
 
       {/* ---- HERO SECTION ---- */}
       <section className="hero-section" aria-label="Featured promotions">
@@ -518,7 +532,7 @@ export default function Home() {
       </section>
 
       {/* ---- DYNAMIC PROMO SECTIONS ---- */}
-      {[
+      {data.all && data.all.length > 0 && [
         "Ecoflow Official Store | Anniversary Sales",
         "Appliances deals | Anniversary Sales",
         "Phones deal | Anniversary Sales",
@@ -538,7 +552,7 @@ export default function Home() {
       ].map((title, idx) => {
         // A simple way to make each section look slightly different
         // In a real app, this would be fetched from an API by category
-        const shiftedProducts = [...allProducts.slice(idx % allProducts.length), ...allProducts.slice(0, idx % allProducts.length)];
+        const shiftedProducts = [...data.all.slice(idx % data.all.length), ...data.all.slice(0, idx % data.all.length)];
         
         return (
           <section className="products-section section-gap" aria-label={title} key={title}>

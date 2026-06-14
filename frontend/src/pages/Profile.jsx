@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Package, Heart, MapPin, Bell, Settings, LogOut, ChevronRight, ShoppingCart, Star, ShieldCheck, Camera, Loader2 } from 'lucide-react';
+import { User, Package, Heart, MapPin, Bell, Settings, LogOut, ChevronRight, ShoppingCart, Star, ShieldCheck, Camera, Loader2, Upload, Clock } from 'lucide-react';
 import { uploadImage } from '../utils/cloudinaryService';
 import { useApp } from '../context/AppContext';
 import { db } from '../firebase';
@@ -17,12 +17,31 @@ const STATUS_COLORS = {
   'Payment Failed': { color: '#ff1744', bg: 'rgba(255,23,68,0.12)' },
 };
 
+const getNextDueDateInfo = (order) => {
+  if (!order.createdAt || (order.installmentsPaid || 0) >= (order.installmentsTotal || 1)) return null;
+  const createdDate = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+  
+  const intervalDays = order.installmentInterval === 'weekly' ? 7 : 30;
+  const daysToAdd = ((order.installmentsPaid || 0) + 1) * intervalDays;
+  
+  const dueDate = new Date(createdDate);
+  dueDate.setDate(dueDate.getDate() + daysToAdd);
+  
+  const now = new Date();
+  const diffTime = dueDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return { dueDate, diffDays };
+};
+
 export default function Profile() {
   const { user, authLoading, logout, wishlist, showToast } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('orders');
   const [profileImage, setProfileImage] = useState(user?.avatar || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [activePaymentModal, setActivePaymentModal] = useState(null);
+  const [paymentAmountInput, setPaymentAmountInput] = useState('');
   const fileInputRef = useRef(null);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -58,11 +77,19 @@ export default function Profile() {
       try {
         const q = query(
           collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', user.uid)
         );
         const snap = await getDocs(q);
-        setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const fetchedOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Sort descending by createdAt on the client side to bypass Firestore composite index requirement
+        fetchedOrders.sort((a, b) => {
+          const tA = a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0;
+          const tB = b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0;
+          return tB - tA;
+        });
+        
+        setOrders(fetchedOrders);
       } catch (e) {
         console.error('Error fetching orders:', e);
       } finally {
@@ -94,6 +121,77 @@ export default function Profile() {
       showToast('Failed to upload image. Please try again.', 'error');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleInstallmentPayment = async (orderId, amountPaid, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      showToast('Uploading receipt, please wait...');
+      const imageUrl = await uploadImage(file);
+      
+      const orderRef = doc(db, 'orders', orderId);
+      const orderToUpdate = orders.find(o => o.id === orderId);
+      const newReceipts = [...(orderToUpdate.installmentReceipts || []), {
+        receiptUrl: imageUrl,
+        amount: Number(amountPaid),
+        uploadedAt: new Date().toISOString(),
+        status: 'Pending Verification'
+      }];
+      
+      await updateDoc(orderRef, { installmentReceipts: newReceipts });
+      
+      setOrders(orders.map(o => o.id === orderId ? { ...o, installmentReceipts: newReceipts } : o));
+      
+      showToast('Payment receipt uploaded successfully!');
+    } catch (error) {
+      showToast('Failed to upload receipt.', 'error');
+    }
+  };
+
+  const handleReuploadInitialDeposit = async (orderId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      showToast('Uploading new receipt, please wait...');
+      const imageUrl = await uploadImage(file);
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, {
+        receiptUrl: imageUrl,
+        initialPaymentStatus: 'Pending',
+        initialPaymentRejectReason: null,
+      });
+      setOrders(orders.map(o => o.id === orderId ? { ...o, receiptUrl: imageUrl, initialPaymentStatus: 'Pending', initialPaymentRejectReason: null } : o));
+      showToast('New deposit receipt uploaded. Awaiting admin review.');
+    } catch (error) {
+      showToast('Failed to upload receipt.', 'error');
+    }
+  };
+
+  const handleReuploadRecurringReceipt = async (orderId, rIdx, amountPaid, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      showToast('Uploading replacement receipt, please wait...');
+      const imageUrl = await uploadImage(file);
+      const orderToUpdate = orders.find(o => o.id === orderId);
+      const updatedReceipts = [...(orderToUpdate.installmentReceipts || [])];
+      updatedReceipts[rIdx] = {
+        ...updatedReceipts[rIdx],
+        receiptUrl: imageUrl,
+        amount: Number(amountPaid),
+        uploadedAt: new Date().toISOString(),
+        status: 'Pending Verification',
+        rejectReason: null,
+      };
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, { installmentReceipts: updatedReceipts });
+      setOrders(orders.map(o => o.id === orderId ? { ...o, installmentReceipts: updatedReceipts } : o));
+      showToast('Replacement receipt submitted. Awaiting admin review.');
+    } catch (error) {
+      showToast('Failed to upload receipt.', 'error');
     }
   };
 
@@ -248,6 +346,14 @@ export default function Profile() {
                     const date = order.createdAt?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) || '—';
                     const s = STATUS_COLORS[order.status] || STATUS_COLORS['Pending'];
                     const shortId = order.id?.slice(0, 8).toUpperCase();
+                    
+                    const customPaid = (order.installmentReceipts || [])
+                      .filter(r => r.status === 'Approved')
+                      .reduce((sum, r) => sum + (Number(r.amount) || order.recurringAmount || 0), 0);
+                    const paidSoFar = (order.initialPaymentStatus !== 'Rejected' ? (order.depositAmount || 0) : 0) + customPaid;
+                    const remainingBalance = Math.max(0, (order.total || order.totalAmount || 0) - paidSoFar);
+                    const dueInfo = getNextDueDateInfo(order);
+                    
                     return (
                       <div key={order.id} style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', transition: 'var(--transition)' }}>
                         <div style={{ width: '72px', height: '72px', background: 'var(--dark)', borderRadius: 'var(--radius-sm)', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -262,6 +368,150 @@ export default function Profile() {
                             <span style={{ fontSize: '12px', color: 'var(--gray-1)' }}>#{shortId} · {date}</span>
                             <span style={{ fontSize: '12px', fontWeight: 700, color: s.color, background: s.bg, padding: '3px 10px', borderRadius: '20px' }}>{order.status || 'Pending'}</span>
                           </div>
+                          
+                          {order.payMethod === 'installment' && (
+                            <div style={{ marginTop: '12px', background: 'rgba(255,152,0,0.05)', border: '1px solid var(--warning)', borderRadius: 'var(--radius-sm)', padding: '12px' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Installment Plan ({order.installmentPlan?.replace('_', ' ').toUpperCase()})</div>
+                              
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', color: 'var(--gray-1)', marginBottom: '12px' }}>
+                                <span>Deposit: <strong style={{ color: 'var(--white)' }}>{formatCurrency(order.depositAmount)}</strong></span>
+                                <span>Recurring: <strong style={{ color: 'var(--white)' }}>{formatCurrency(order.recurringAmount)}</strong></span>
+                              </div>
+                              
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '12px', color: 'var(--gray-1)', marginBottom: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '4px' }}>
+                                <div>Total: <br/><strong style={{ color: 'var(--white)' }}>{formatCurrency(order.total || order.totalAmount)}</strong></div>
+                                <div>Paid: <br/><strong style={{ color: 'var(--success)' }}>{formatCurrency(paidSoFar)}</strong></div>
+                                <div>Balance: <br/><strong style={{ color: 'var(--danger)' }}>{formatCurrency(remainingBalance)}</strong></div>
+                              </div>
+                              
+                              {dueInfo && (
+                                <div style={{ marginBottom: '16px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: dueInfo.diffDays < 0 ? 'rgba(255,0,0,0.1)' : dueInfo.diffDays === 0 ? 'rgba(255,152,0,0.1)' : 'rgba(0,255,0,0.1)', color: dueInfo.diffDays < 0 ? '#ff1744' : dueInfo.diffDays === 0 ? '#FF9800' : '#00E676', padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 800 }}>
+                                  <Clock size={12} />
+                                  {dueInfo.diffDays < 0 
+                                    ? `Overdue by ${Math.abs(dueInfo.diffDays)} Days` 
+                                    : dueInfo.diffDays === 0 
+                                    ? `Payment Due Today` 
+                                    : `Next Payment in ${dueInfo.diffDays} Days`}
+                                </div>
+                              )}
+                              
+                                {/* Initial payment rejection notice */}
+                                {order.initialPaymentStatus === 'Rejected' && (
+                                  <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'rgba(255,23,68,0.1)', border: '1px solid var(--danger)', borderRadius: '4px' }}>
+                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--danger)', marginBottom: '4px' }}>⚠️ Deposit Payment Rejected</div>
+                                    {order.initialPaymentRejectReason && (
+                                      <div style={{ fontSize: '12px', color: 'var(--gray-1)', marginBottom: '8px' }}>Reason: <strong style={{ color: 'var(--white)' }}>{order.initialPaymentRejectReason}</strong></div>
+                                    )}
+                                    <input type="file" id={`reupload-deposit-${order.id}`} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleReuploadInitialDeposit(order.id, e)} />
+                                    <label htmlFor={`reupload-deposit-${order.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--danger)', color: 'var(--white)', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                      <Upload size={13} /> Re-upload Deposit Receipt
+                                    </label>
+                                  </div>
+                                )}
+                                
+                                <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '4px', padding: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--white)' }}>Progress</span>
+                                  <span style={{ fontSize: '12px', color: 'var(--warning)', fontWeight: 700 }}>
+                                    {order.installmentsPaid || 0} of {order.installmentsTotal || 1} Payments
+                                  </span>
+                                </div>
+                                <div style={{ height: '6px', background: 'var(--dark)', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' }}>
+                                  <div style={{ width: `${Math.min(100, ((order.installmentsPaid || 0) / (order.installmentsTotal || 1)) * 100)}%`, height: '100%', background: 'var(--warning)' }}></div>
+                                </div>
+                                
+                                {(order.installmentsPaid || 0) < (order.installmentsTotal || 1) && remainingBalance > 0 && (
+                                  <div>
+                                    {activePaymentModal !== order.id ? (
+                                      <button 
+                                        onClick={() => { setActivePaymentModal(order.id); setPaymentAmountInput(order.recurringAmount?.toString()); }}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--warning)', color: 'var(--black)', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', border: 'none' }}
+                                      >
+                                        <Upload size={14} /> Make Next Payment
+                                      </button>
+                                    ) : (
+                                      <div style={{ marginTop: '12px', padding: '14px', background: 'var(--dark)', border: '1px solid var(--dark-border)', borderRadius: '6px' }}>
+                                        {/* Bank Account Details */}
+                                        <div style={{ background: 'rgba(255,152,0,0.07)', border: '1px solid var(--warning)', borderRadius: '4px', padding: '12px', marginBottom: '12px' }}>
+                                          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Transfer to this account first</div>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                              <span style={{ color: 'var(--gray-1)' }}>Bank Name</span>
+                                              <span style={{ fontWeight: 700, color: 'var(--white)' }}>Wema Bank</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                              <span style={{ color: 'var(--gray-1)' }}>Account Name</span>
+                                              <span style={{ fontWeight: 700, color: 'var(--white)' }}>The Electric Plug Enterprises</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                                              <span style={{ color: 'var(--gray-1)' }}>Account Number</span>
+                                              <span style={{ fontWeight: 900, fontSize: '15px', color: 'var(--warning)', letterSpacing: '1.5px', fontFamily: 'monospace' }}>0125986348</span>
+                                            </div>
+                                            <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--gray-1)', textAlign: 'center', borderTop: '1px solid var(--dark-border)', paddingTop: '6px' }}>
+                                              Transfer exactly <strong style={{ color: 'var(--white)' }}>{formatCurrency(order.recurringAmount)}</strong> or your agreed amount, then upload your receipt below.
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--white)' }}>Enter Amount Paid (₦)</div>
+                                        <input type="number" value={paymentAmountInput} onChange={e => setPaymentAmountInput(e.target.value)} placeholder="e.g. 30000" style={{ width: '100%', padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--dark-border)', color: 'var(--white)', borderRadius: '4px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                                        
+                                        <input 
+                                          type="file" 
+                                          id={`custom-upload-${order.id}`} 
+                                          style={{ display: 'none' }} 
+                                          accept="image/*"
+                                          onChange={(e) => { handleInstallmentPayment(order.id, paymentAmountInput, e); setActivePaymentModal(null); }}
+                                        />
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                          <label htmlFor={`custom-upload-${order.id}`} style={{ flex: 1, textAlign: 'center', background: 'var(--warning)', color: 'var(--black)', padding: '9px', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                            <Upload size={13} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'middle' }} /> Upload Receipt
+                                          </label>
+                                          <button onClick={() => setActivePaymentModal(null)} style={{ padding: '9px 12px', background: 'var(--dark-border)', color: 'var(--white)', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>Cancel</button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {order.installmentReceipts?.length > 0 && (
+                                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {order.installmentReceipts.map((rec, rIdx) => (
+                                      <div key={rIdx} style={{ borderTop: '1px solid var(--dark-border)', paddingTop: '8px' }}>
+                                        <div style={{ fontSize: '11px', color: 'var(--gray-1)', display: 'flex', justifyContent: 'space-between', marginBottom: rec.status === 'Rejected' ? '6px' : '0' }}>
+                                          <span>{rec.amount ? formatCurrency(rec.amount) : 'Payment'} on {new Date(rec.uploadedAt).toLocaleDateString()}</span>
+                                          <span style={{ color: rec.status === 'Approved' ? 'var(--success)' : rec.status === 'Rejected' ? 'var(--danger)' : 'var(--warning)', fontWeight: 600 }}>{rec.status}</span>
+                                        </div>
+                                        {rec.status === 'Rejected' && (
+                                          <div style={{ padding: '8px', background: 'rgba(255,23,68,0.08)', border: '1px solid var(--danger)', borderRadius: '4px' }}>
+                                            {rec.rejectReason && (
+                                              <div style={{ fontSize: '11px', color: 'var(--danger)', marginBottom: '6px' }}>Reason: <strong>{rec.rejectReason}</strong></div>
+                                            )}
+                                            <input type="number" id={`reupload-amt-${order.id}-${rIdx}`} placeholder="Enter amount paid (₦)" defaultValue={rec.amount} style={{ width: '100%', padding: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--dark-border)', color: 'var(--white)', borderRadius: '4px', marginBottom: '6px', boxSizing: 'border-box', fontSize: '12px' }} />
+                                            <input type="file" id={`reupload-rec-${order.id}-${rIdx}`} style={{ display: 'none' }} accept="image/*"
+                                              onChange={(e) => {
+                                                const amtInput = document.getElementById(`reupload-amt-${order.id}-${rIdx}`);
+                                                handleReuploadRecurringReceipt(order.id, rIdx, amtInput?.value || rec.amount, e);
+                                              }}
+                                            />
+                                            <label htmlFor={`reupload-rec-${order.id}-${rIdx}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'var(--danger)', color: 'var(--white)', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                                              <Upload size={11} /> Re-upload Receipt
+                                            </label>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {order.payMethod && order.payMethod !== 'installment' && (
+                            <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--gray-1)' }}>
+                              Payment Method: <strong style={{ color: 'var(--white)' }}>{order.payMethod.replace('_', ' ').toUpperCase()}</strong>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

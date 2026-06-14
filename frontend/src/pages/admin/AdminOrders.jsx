@@ -21,6 +21,23 @@ const STATUS_OPTIONS = ['Pending', 'Pending Verification', 'Processing', 'In Tra
 
 const fmt = n => '₦' + Math.ceil(n || 0).toLocaleString('en-NG');
 
+const getNextDueDateInfo = (order) => {
+  if (!order.createdAt || (order.installmentsPaid || 0) >= (order.installmentsTotal || 1)) return null;
+  const createdDate = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+  
+  const intervalDays = order.installmentInterval === 'weekly' ? 7 : 30;
+  const daysToAdd = ((order.installmentsPaid || 0) + 1) * intervalDays;
+  
+  const dueDate = new Date(createdDate);
+  dueDate.setDate(dueDate.getDate() + daysToAdd);
+  
+  const now = new Date();
+  const diffTime = dueDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return { dueDate, diffDays };
+};
+
 function OrderCard({ order }) {
   const { showToast } = useApp();
   const [expanded, setExpanded] = useState(false);
@@ -39,7 +56,131 @@ function OrderCard({ order }) {
     }
   };
 
+  const handleInitialPaymentStatus = async (status) => {
+    if (updating) return;
+
+    if (status === 'Rejected') {
+      const reason = prompt('Enter reason for rejection (e.g. "Amount too low", "Receipt unclear", "Wrong account"):');
+      if (!reason || !reason.trim()) return;
+      setUpdating(true);
+      try {
+        await updateDoc(doc(db, 'orders', order.id), {
+          initialPaymentStatus: 'Rejected',
+          initialPaymentRejectReason: reason.trim(),
+        });
+        showToast('Initial payment rejected. Customer will be notified.');
+      } catch (e) {
+        showToast('Failed to reject payment.', 'error');
+      } finally {
+        setUpdating(false);
+      }
+      return;
+    }
+
+    // Approve flow — admin confirms/adjusts actual amount received
+    const confirmed = prompt(
+      `Confirm actual deposit amount received (₦). Required was ₦${Math.ceil(order.depositAmount || 0).toLocaleString('en-NG')}. Enter actual amount received:`,
+      String(Math.ceil(order.depositAmount || 0))
+    );
+    if (confirmed === null) return; // cancelled
+    const actualAmount = Number(confirmed);
+    if (isNaN(actualAmount) || actualAmount <= 0) return showToast('Invalid amount', 'error');
+
+    setUpdating(true);
+    try {
+      await updateDoc(doc(db, 'orders', order.id), {
+        initialPaymentStatus: 'Approved',
+        initialPaymentRejectReason: null,
+        depositAmount: actualAmount, // overwrite with confirmed actual amount
+      });
+      const diff = actualAmount - (order.depositAmount || 0);
+      if (diff > 0) {
+        showToast(`Approved! ₦${Math.ceil(diff).toLocaleString('en-NG')} overpayment subtracted from future balance.`);
+      } else if (diff < 0) {
+        showToast(`Approved! ₦${Math.ceil(Math.abs(diff)).toLocaleString('en-NG')} shortfall added to remaining balance.`);
+      } else {
+        showToast('Initial payment approved successfully!');
+      }
+    } catch (e) {
+      showToast('Failed to approve payment.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleApproveReceipt = async (rIdx) => {
+    if (updating) return;
+    setUpdating(true);
+    try {
+      const updatedReceipts = [...(order.installmentReceipts || [])];
+      updatedReceipts[rIdx] = { ...updatedReceipts[rIdx], status: 'Approved', rejectReason: null };
+      const newPaid = (order.installmentsPaid || 0) + 1;
+      await updateDoc(doc(db, 'orders', order.id), {
+        installmentReceipts: updatedReceipts,
+        installmentsPaid: newPaid
+      });
+      showToast('Installment payment approved!');
+    } catch (e) {
+      showToast('Failed to approve payment.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRejectReceipt = async (rIdx) => {
+    const reason = prompt('Enter reason for rejection (e.g. "Amount doesn\'t match", "Receipt unclear"):');
+    if (!reason || !reason.trim()) return;
+    if (updating) return;
+    setUpdating(true);
+    try {
+      const updatedReceipts = [...(order.installmentReceipts || [])];
+      updatedReceipts[rIdx] = { ...updatedReceipts[rIdx], status: 'Rejected', rejectReason: reason.trim() };
+      await updateDoc(doc(db, 'orders', order.id), { installmentReceipts: updatedReceipts });
+      showToast('Receipt rejected. Customer can re-upload.');
+    } catch (e) {
+      showToast('Failed to reject receipt.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAddManualPayment = async () => {
+    const amountStr = prompt(`Enter custom manual payment amount for order ${order.id.slice(0,8).toUpperCase()} (e.g. 50000)`);
+    if (!amountStr) return;
+    const amount = Number(amountStr);
+    if (isNaN(amount) || amount <= 0) return showToast('Invalid amount', 'error');
+    
+    if (updating) return;
+    setUpdating(true);
+    try {
+      const updatedReceipts = [...(order.installmentReceipts || []), {
+        receiptUrl: '',
+        amount: amount,
+        uploadedAt: new Date().toISOString(),
+        status: 'Approved' // auto-approved since admin is adding it manually
+      }];
+      const newPaid = (order.installmentsPaid || 0) + 1;
+      
+      await updateDoc(doc(db, 'orders', order.id), { 
+        installmentReceipts: updatedReceipts,
+        installmentsPaid: newPaid
+      });
+      showToast(`Manual payment of ${fmt(amount)} added successfully!`);
+    } catch (e) {
+      showToast('Failed to add manual payment.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const date = order.createdAt?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) || '—';
+
+  const customPaid = (order.installmentReceipts || [])
+    .filter(r => r.status === 'Approved')
+    .reduce((sum, r) => sum + (Number(r.amount) || order.recurringAmount || 0), 0);
+  const paidSoFar = (order.initialPaymentStatus !== 'Rejected' ? (order.depositAmount || 0) : 0) + customPaid;
+  const remainingBalance = Math.max(0, (order.total || order.totalAmount || 0) - paidSoFar);
+  const dueInfo = getNextDueDateInfo(order);
 
   return (
     <div style={{ background: 'var(--dark-card)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', transition: 'var(--transition)' }}>
@@ -120,16 +261,117 @@ function OrderCard({ order }) {
               </div>
             )}
 
+            {order.payMethod === 'installment' && (
+              <div style={{ background: 'rgba(255,152,0,0.05)', border: '1px solid var(--warning)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Installment Plan</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px', color: 'var(--white)', marginBottom: '12px' }}>
+                  <div style={{ color: 'var(--gray-1)' }}>Plan: <strong style={{ color: 'var(--white)' }}>{order.installmentPlan?.replace('_', ' ').toUpperCase()}</strong></div>
+                  <div style={{ color: 'var(--gray-1)' }}>Deposit: <strong style={{ color: 'var(--white)' }}>{fmt(order.depositAmount)}</strong></div>
+                  <div style={{ color: 'var(--gray-1)' }}>Recurring: <strong style={{ color: 'var(--white)' }}>{fmt(order.recurringAmount)}</strong></div>
+                  <div style={{ color: 'var(--gray-1)' }}>Interest: <strong style={{ color: 'var(--white)' }}>{fmt(order.installmentInterest)}</strong></div>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontSize: '11px', color: 'var(--gray-1)', marginBottom: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '4px' }}>
+                  <div>Total: <br/><strong style={{ color: 'var(--white)' }}>{fmt(order.total || order.totalAmount)}</strong></div>
+                  <div>Paid: <br/><strong style={{ color: 'var(--success)' }}>{fmt(paidSoFar)}</strong></div>
+                  <div>Balance: <br/><strong style={{ color: 'var(--danger)' }}>{fmt(remainingBalance)}</strong></div>
+                </div>
+
+                {dueInfo && (
+                  <div style={{ marginBottom: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: dueInfo.diffDays < 0 ? 'rgba(255,0,0,0.1)' : dueInfo.diffDays === 0 ? 'rgba(255,152,0,0.1)' : 'rgba(0,255,0,0.1)', color: dueInfo.diffDays < 0 ? '#ff1744' : dueInfo.diffDays === 0 ? '#FF9800' : '#00E676', padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 800 }}>
+                    <Clock size={12} />
+                    {dueInfo.diffDays < 0 
+                      ? `Overdue by ${Math.abs(dueInfo.diffDays)} Days` 
+                      : dueInfo.diffDays === 0 
+                      ? `Payment Due Today` 
+                      : `Next Payment in ${dueInfo.diffDays} Days`}
+                  </div>
+                )}
+                
+                <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', padding: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--white)' }}>Progress</span>
+                    <span style={{ fontSize: '12px', color: 'var(--warning)', fontWeight: 700 }}>
+                      {order.installmentsPaid || 0} of {order.installmentsTotal || 1} Payments
+                    </span>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--dark)', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' }}>
+                    <div style={{ width: `${Math.min(100, ((order.installmentsPaid || 0) / (order.installmentsTotal || 1)) * 100)}%`, height: '100%', background: 'var(--warning)' }}></div>
+                  </div>
+                  
+                  {order.installmentReceipts?.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gray-2)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recurring Payment Receipts</div>
+                      {order.installmentReceipts.map((rec, rIdx) => (
+                        <div key={rIdx} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '4px', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--dark-border)', background: 'var(--dark)', flexShrink: 0 }}>
+                              {rec.receiptUrl ? <img src={rec.receiptUrl} alt="Receipt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={16} color="var(--gray-2)" style={{ margin: '12px' }} />}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', color: 'var(--white)', fontWeight: 600 }}>{rec.amount ? fmt(rec.amount) : 'Payment'} on {new Date(rec.uploadedAt).toLocaleDateString()}</div>
+                              <div style={{ fontSize: '11px', color: rec.status === 'Approved' ? 'var(--success)' : rec.status === 'Rejected' ? 'var(--danger)' : 'var(--warning)' }}>{rec.status}</div>
+                              {rec.status === 'Rejected' && rec.rejectReason && (
+                                <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '2px', fontStyle: 'italic' }}>Reason: {rec.rejectReason}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                            {rec.receiptUrl && (
+                              <a href={rec.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--white)', background: 'var(--dark-border)', padding: '6px 10px', borderRadius: '20px', textDecoration: 'none' }}>View</a>
+                            )}
+                            {rec.status === 'Pending Verification' && (
+                              <>
+                                <button onClick={() => handleApproveReceipt(rIdx)} disabled={updating} style={{ fontSize: '11px', fontWeight: 700, color: 'var(--black)', background: 'var(--success)', border: 'none', padding: '6px 10px', borderRadius: '20px', cursor: updating ? 'not-allowed' : 'pointer' }}>Approve</button>
+                                <button onClick={() => handleRejectReceipt(rIdx)} disabled={updating} style={{ fontSize: '11px', fontWeight: 700, color: 'var(--white)', background: 'var(--danger)', border: 'none', padding: '6px 10px', borderRadius: '20px', cursor: updating ? 'not-allowed' : 'pointer' }}>Reject</button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(order.installmentsPaid || 0) < (order.installmentsTotal || 1) && remainingBalance > 0 && (
+                    <button onClick={handleAddManualPayment} disabled={updating} style={{ marginTop: '12px', width: '100%', padding: '10px', background: 'var(--warning)', color: 'var(--black)', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: updating ? 'not-allowed' : 'pointer' }}>
+                      Add Custom Payment (Cash/POS)
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {order.payMethod && order.payMethod !== 'installment' && (
+              <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--gray-2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Payment Method</div>
+                <div style={{ fontSize: '13px', fontWeight: 700 }}>{order.payMethod.replace('_', ' ').toUpperCase()}</div>
+              </div>
+            )}
+
             {order.receiptUrl && (
               <div style={{ background: 'rgba(0,176,255,0.05)', border: '1px solid var(--info)', borderRadius: 'var(--radius-sm)', padding: '14px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--info)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Payment Receipt Uploaded</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--info)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Initial Payment Receipt</div>
+                  {order.initialPaymentStatus && (
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: order.initialPaymentStatus === 'Approved' ? 'var(--success)' : order.initialPaymentStatus === 'Rejected' ? 'var(--danger)' : 'var(--warning)' }}>
+                      {order.initialPaymentStatus}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <div style={{ width: '60px', height: '60px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--dark-border)' }}>
                     <img src={order.receiptUrl} alt="Receipt Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
-                  <a href={order.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--white)', background: 'var(--primary)', color: 'var(--black)', padding: '8px 16px', borderRadius: '20px', textDecoration: 'none' }}>
+                  <a href={order.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--white)', background: 'var(--primary)', color: 'var(--black)', padding: '6px 12px', borderRadius: '20px', textDecoration: 'none' }}>
                     View Full Receipt
                   </a>
+                  
+                  {(!order.initialPaymentStatus || order.initialPaymentStatus === 'Pending') && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => handleInitialPaymentStatus('Approved')} disabled={updating} style={{ fontSize: '11px', fontWeight: 700, color: 'var(--black)', background: 'var(--success)', border: 'none', padding: '6px 12px', borderRadius: '20px', cursor: updating ? 'not-allowed' : 'pointer' }}>Approve</button>
+                      <button onClick={() => handleInitialPaymentStatus('Rejected')} disabled={updating} style={{ fontSize: '11px', fontWeight: 700, color: 'var(--white)', background: 'var(--danger)', border: 'none', padding: '6px 12px', borderRadius: '20px', cursor: updating ? 'not-allowed' : 'pointer' }}>Reject</button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

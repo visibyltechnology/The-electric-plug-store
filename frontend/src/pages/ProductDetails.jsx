@@ -8,6 +8,7 @@ import {
   BatteryCharging, MicOff, Package, Speaker, Cable, Loader2, CheckCircle2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import SEO from '../components/SEO';
 
 export default function ProductDetails() {
   const { addToCart, toggleWishlist, isInWishlist } = useApp();
@@ -87,6 +88,14 @@ export default function ProductDetails() {
 
   return (
     <main className="main-content" id="main">
+      <SEO
+        title={`${product.name} - Buy in Nigeria`}
+        description={`Buy ${product.name} in Nigeria at The Electric Plug. ₦${Math.ceil(product.price || 0).toLocaleString('en-NG')}. Fast delivery nationwide. Flexible installment payment available.`}
+        image={product.images?.[0] || product.imgUrl || '/logo.jpeg'}
+        url={`/product/${product.id}`}
+        type="product"
+        product={product}
+      />
       <div className="text-primary" style={{ fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>
         <Link to="/" style={{ color: 'var(--gray-1)' }}>Home</Link> / 
         <Link to="/shop" style={{ color: 'var(--gray-1)' }}> Shop </Link> / 
@@ -151,10 +160,10 @@ export default function ProductDetails() {
           
           <div className="pd-rating">
             <span className="stars" style={{ color: 'var(--primary)', fontSize: '16px', letterSpacing: '2px' }}>
-              {'★'.repeat(Math.floor(product.rating))}{'☆'.repeat(5 - Math.floor(product.rating))}
+              {'★'.repeat(Math.max(0, Math.min(5, Math.floor(Number(product.rating) || 0))))}{'☆'.repeat(Math.max(0, 5 - Math.min(5, Math.floor(Number(product.rating) || 0))))}
             </span>
-            <span style={{ fontWeight: 700, color: 'var(--white)', marginLeft: '8px' }}>{product.rating}</span>
-            <span>({product.reviews} verified ratings)</span>
+            <span style={{ fontWeight: 700, color: 'var(--white)', marginLeft: '8px' }}>{Number(product.rating) || 0}</span>
+            <span>({Number(product.reviews) || 0} verified ratings)</span>
           </div>
 
           <div>
@@ -340,45 +349,63 @@ export default function ProductDetails() {
           );
         })()}
 
-        {activeTab === 2 && (
-          <div className="tab-content active">
-            <div className="reviews-grid">
-              <div className="rating-summary">
-                <h3>Customer Feedback</h3>
-                <div>
-                  <div className="rs-score">{product.rating}</div>
-                  <div className="rs-stars" style={{ color: 'var(--primary)', letterSpacing: '2px' }}>★★★★★</div>
-                  <div style={{ fontSize: '13px', color: 'var(--gray-1)' }}>Based on {product.reviews} reviews</div>
-                </div>
-                <div className="rs-bars">
-                  <div className="rs-bar-row">5★ <div className="rs-bar-track"><div className="rs-bar-fill" style={{ width: '85%' }}></div></div> 85%</div>
-                  <div className="rs-bar-row">4★ <div className="rs-bar-track"><div className="rs-bar-fill" style={{ width: '10%' }}></div></div> 10%</div>
-                  <div className="rs-bar-row">3★ <div className="rs-bar-track"><div className="rs-bar-fill" style={{ width: '3%' }}></div></div> 3%</div>
-                  <div className="rs-bar-row">2★ <div className="rs-bar-track"><div className="rs-bar-fill" style={{ width: '1%' }}></div></div> 1%</div>
-                  <div className="rs-bar-row">1★ <div className="rs-bar-track"><div className="rs-bar-fill" style={{ width: '1%' }}></div></div> 1%</div>
-                </div>
-              </div>
-              <div className="review-list">
-                <div className="review-card">
-                  <div className="rc-header">
-                    <span className="rc-user">Hassan Adebayo <span style={{ color: 'var(--success)', fontSize: '11px' }}>✓ Verified Buyer</span></span>
-                    <span className="rc-date">May 12, 2026</span>
+        {activeTab === 2 && (() => {
+          const ratingValue = Number(product.rating) || 0;
+          const reviewsCount = Number(product.reviews) || 0;
+          const starsString = '★'.repeat(Math.max(0, Math.min(5, Math.floor(ratingValue)))) + '☆'.repeat(Math.max(0, 5 - Math.min(5, Math.floor(ratingValue))));
+          const reviewsList = product.reviewsList || [];
+
+          // Calculate breakdown if reviews exist
+          const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+          reviewsList.forEach(r => {
+            const s = Math.max(1, Math.min(5, Math.floor(Number(r.stars) || 5)));
+            counts[s]++;
+          });
+          const totalReviews = reviewsList.length || 1; // avoid division by zero
+          
+          return (
+            <div className="tab-content active">
+              <div className="reviews-grid">
+                <div className="rating-summary">
+                  <h3>Customer Feedback</h3>
+                  <div>
+                    <div className="rs-score">{ratingValue > 0 ? ratingValue.toFixed(1) : '0'}</div>
+                    <div className="rs-stars" style={{ color: 'var(--primary)', letterSpacing: '2px' }}>{starsString}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--gray-1)' }}>Based on {reviewsCount} reviews</div>
                   </div>
-                  <div className="rc-stars">★★★★★</div>
-                  <div className="rc-text">Absolutely incredible quality. I upgraded from the previous model and the difference is noticeable. Highly recommend buying from The Electric Plug, delivery was very fast!</div>
-                </div>
-                <div className="review-card">
-                  <div className="rc-header">
-                    <span className="rc-user">Chidinma Okafor <span style={{ color: 'var(--success)', fontSize: '11px' }}>✓ Verified Buyer</span></span>
-                    <span className="rc-date">April 28, 2026</span>
+                  <div className="rs-bars">
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const pct = reviewsList.length > 0 ? Math.round((counts[star] / totalReviews) * 100) : 0;
+                      return (
+                        <div key={star} className="rs-bar-row">
+                          {star}★ <div className="rs-bar-track"><div className="rs-bar-fill" style={{ width: `${pct}%` }}></div></div> {pct}%
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="rc-stars">★★★★★</div>
-                  <div className="rc-text">Worth every Naira. Very comfortable and premium feel. Customer service was also very helpful when I called to confirm my order.</div>
+                </div>
+                <div className="review-list">
+                  {reviewsList.length > 0 ? (
+                    reviewsList.map((review, idx) => (
+                      <div key={idx} className="review-card">
+                        <div className="rc-header">
+                          <span className="rc-user">{review.user || 'Anonymous'} <span style={{ color: 'var(--success)', fontSize: '11px' }}>✓ Verified Buyer</span></span>
+                          <span className="rc-date">{review.date || 'Recently'}</span>
+                        </div>
+                        <div className="rc-stars">{'★'.repeat(Math.max(1, Math.min(5, Number(review.stars) || 5)))}</div>
+                        <div className="rc-text">{review.text}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '20px', color: 'var(--gray-1)', fontStyle: 'italic' }}>
+                      No reviews yet for this product. Be the first to leave a review!
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </main>

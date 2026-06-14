@@ -15,10 +15,15 @@ const INSTALLMENT_OPTIONS = [
     label: `${i + 2} Weeks`,
     type: 'weekly',
     duration: i + 2,
-    interestRate: (i + 2) * 0.02 // 2% per week
+    interestRate: (i + 2) * 0.015 // 1.5% per week
   })),
-  { id: '2_months', label: '2 Months', type: 'monthly', duration: 2, interestRate: 0.10 }, // 10%
-  { id: '6_months', label: '6 Months', type: 'monthly', duration: 6, interestRate: 0.30 }  // 30%
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: `${i + 2}_months`,
+    label: `${i + 2} Months`,
+    type: 'monthly',
+    duration: i + 2,
+    interestRate: (i + 2) * 0.05 // 5% per month
+  }))
 ];
 
 export default function Checkout() {
@@ -115,7 +120,12 @@ export default function Checkout() {
         installmentPlan: formData.payMethod === 'installment' ? formData.installmentPlan : null,
         depositAmount: formData.payMethod === 'installment' ? depositAmount : null,
         recurringAmount: formData.payMethod === 'installment' ? recurringAmount : null,
+        installmentsTotal: formData.payMethod === 'installment' ? activePlan.duration : null,
+        installmentInterval: formData.payMethod === 'installment' ? activePlan.type : null,
+        installmentsPaid: formData.payMethod === 'installment' ? 0 : null,
+        installmentReceipts: formData.payMethod === 'installment' ? [] : null,
         status: 'Pending Verification',
+        initialPaymentStatus: 'Pending',
         receiptUrl: receiptUrl,
         createdAt: new Date(),
       };
