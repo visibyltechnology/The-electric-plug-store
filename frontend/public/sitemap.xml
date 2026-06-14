@@ -3,7 +3,7 @@
 
   <!-- Homepage -->
   <url>
-    <loc>https://theelectricplug.com.ng/</loc>
+    <loc>https://the-electric-plug.onrender.com/</loc>
     <lastmod>2026-06-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -11,7 +11,7 @@
 
   <!-- Shop -->
   <url>
-    <loc>https://theelectricplug.com.ng/shop</loc>
+    <loc>https://the-electric-plug.onrender.com/shop</loc>
     <lastmod>2026-06-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -19,27 +19,27 @@
 
   <!-- Category pages (via shop query) -->
   <url>
-    <loc>https://theelectricplug.com.ng/shop?q=smartphones</loc>
+    <loc>https://the-electric-plug.onrender.com/shop?q=smartphones</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://theelectricplug.com.ng/shop?q=laptops</loc>
+    <loc>https://the-electric-plug.onrender.com/shop?q=laptops</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://theelectricplug.com.ng/shop?q=televisions</loc>
+    <loc>https://the-electric-plug.onrender.com/shop?q=televisions</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://theelectricplug.com.ng/shop?q=gaming</loc>
+    <loc>https://the-electric-plug.onrender.com/shop?q=gaming</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://theelectricplug.com.ng/shop?q=headphones</loc>
+    <loc>https://the-electric-plug.onrender.com/shop?q=headphones</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

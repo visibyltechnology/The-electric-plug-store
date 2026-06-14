@@ -9,4 +9,4 @@ Disallow: /profile
 Disallow: /cart
 
 # Sitemap
-Sitemap: https://theelectricplug.com.ng/sitemap.xml
+Sitemap: https://the-electric-plug.onrender.com/sitemap.xml
