@@ -36,7 +36,7 @@ export default function Navbar() {
           <span>•</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldCheck size={14} className="ann-icon" /> 100% Secure Payments & Genuine Products</span>
           <span>•</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><PhoneCall size={14} className="ann-icon" /> Call Us: 0903 227 2294</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><PhoneCall size={14} className="ann-icon" /> Call Us: 09032272294</span>
         </div>
       </div>
 

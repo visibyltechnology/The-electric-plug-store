@@ -62,8 +62,7 @@ export default function Footer() {
               <span className="footer-contact-icon" style={{ color: 'var(--primary)' }}><PhoneCall size={20} /></span>
               <div className="footer-contact-text">
                 <strong>Customer Service</strong>
-                0903 227 2294<br />
-                09116763595<br />
+                09032272294<br />
                 Mon – Sat: 8am – 8pm
               </div>
             </div>
@@ -78,14 +77,21 @@ export default function Footer() {
               <span className="footer-contact-icon" style={{ color: 'var(--primary)' }}><MapPin size={20} /></span>
               <div className="footer-contact-text">
                 <strong>Head Office</strong>
-                Shop 3, Aboderin Shopping complex,<br />beside California Luxury Hotel and Suites,<br />Agbaje-Orita Challenge, Ibadan.
+                A7 adeti street, FABTECH plaza<br />ilesa osun state
               </div>
             </div>
-            <div className="footer-contact-item">
+            <div className="footer-contact-item" style={{ marginTop: '12px' }}>
+              <span className="footer-contact-icon" style={{ color: 'var(--primary)' }}><MapPin size={20} /></span>
+              <div className="footer-contact-text">
+                <strong>Branch Office</strong>
+                Shop424 upstairs japan line,<br />electronics alaba international market,<br />ojo, lagos state
+              </div>
+            </div>
+            <div className="footer-contact-item" style={{ marginTop: '12px' }}>
               <span className="footer-contact-icon" style={{ color: 'var(--primary)' }}><MessageSquare size={20} /></span>
               <div className="footer-contact-text">
                 <strong>WhatsApp</strong>
-                0903 227 2294
+                09032272294
               </div>
             </div>
           </div>
