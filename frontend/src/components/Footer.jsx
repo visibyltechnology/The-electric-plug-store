@@ -62,7 +62,7 @@ export default function Footer() {
               <span className="footer-contact-icon" style={{ color: 'var(--primary)' }}><PhoneCall size={20} /></span>
               <div className="footer-contact-text">
                 <strong>Customer Service</strong>
-                09032272294<br />
+                <a href="tel:09032272294" style={{ color: 'inherit', textDecoration: 'none' }}>09032272294</a><br />
                 Mon – Sat: 8am – 8pm
               </div>
             </div>
@@ -91,7 +91,7 @@ export default function Footer() {
               <span className="footer-contact-icon" style={{ color: 'var(--primary)' }}><MessageSquare size={20} /></span>
               <div className="footer-contact-text">
                 <strong>WhatsApp</strong>
-                09032272294
+                <a href="https://wa.me/2349032272294" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>09032272294</a>
               </div>
             </div>
           </div>
