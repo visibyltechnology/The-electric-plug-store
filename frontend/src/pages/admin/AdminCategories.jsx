@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronRight, Tag, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import { categoryTaxonomy } from '../../data/taxonomy';
 import {
   listenToCategories, addCategory, deleteCategory, updateCategory, seedTaxonomy
 } from '../../utils/catalogService';
 
-// Build initial tree from static taxonomy + any DB additions
+// Build initial tree from DB additions only
 function buildTree(dbCats) {
-  // Start from hardcoded taxonomy
   const tree = {};
-  Object.entries(categoryTaxonomy).forEach(([dept, cats]) => {
-    tree[dept] = {};
-    Object.entries(cats).forEach(([cat, subs]) => {
-      tree[dept][cat] = [...subs];
-    });
-  });
 
   // Merge DB custom entries
   dbCats.forEach(c => {
