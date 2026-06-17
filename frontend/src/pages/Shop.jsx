@@ -10,10 +10,18 @@ import SEO from '../components/SEO';
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
+  const initialDept = searchParams.get('dept');
 
   const [view, setView] = useState('grid');
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [expandedDept, setExpandedDept] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(initialDept || null);
+  const [expandedDept, setExpandedDept] = useState(initialDept || null);
+
+  useEffect(() => {
+    if (initialDept) {
+      setActiveCategory(initialDept);
+      setExpandedDept(initialDept);
+    }
+  }, [initialDept]);
   const [selectedFilters, setSelectedFilters] = useState({});
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -72,8 +80,9 @@ export default function Shop() {
     setPriceMin('');
     setPriceMax('');
     setActiveCategory(null);
-    if (searchParams.has('q')) {
+    if (searchParams.has('q') || searchParams.has('dept')) {
       searchParams.delete('q');
+      searchParams.delete('dept');
       setSearchParams(searchParams);
     }
   };

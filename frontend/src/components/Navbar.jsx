@@ -9,6 +9,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../pages/Home';
 import ThemeToggle from './ThemeToggle';
+import { listenToCategories } from '../utils/catalogService';
 
 export default function Navbar() {
   const { user, cartCount, cartTotal, wishlist } = useApp();
@@ -23,6 +24,30 @@ export default function Navbar() {
       navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsMobileMenuOpen(false);
     }
+  };
+
+  const [departments, setDepartments] = useState([]);
+  useEffect(() => {
+    const unsub = listenToCategories(cats => {
+      const tree = {};
+      cats.forEach(c => {
+        const dept = c.department || c.name;
+        if (!tree[dept]) tree[dept] = true;
+      });
+      setDepartments(Object.keys(tree).slice(0, 5));
+    });
+    return () => unsub();
+  }, []);
+
+  const getDeptIcon = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes('phone') || n.includes('wearable')) return <Smartphone size={16} className="cat-icon" />;
+    if (n.includes('comput') || n.includes('laptop')) return <Laptop size={16} className="cat-icon" />;
+    if (n.includes('tv') || n.includes('audio')) return <Tv size={16} className="cat-icon" />;
+    if (n.includes('gam')) return <Gamepad2 size={16} className="cat-icon" />;
+    if (n.includes('photo') || n.includes('camera')) return <Camera size={16} className="cat-icon" />;
+    if (n.includes('home') || n.includes('appliance')) return <HomeIcon size={16} className="cat-icon" />;
+    return <LayoutGrid size={16} className="cat-icon" />;
   };
 
   return (
@@ -159,12 +184,11 @@ export default function Navbar() {
           <Link to="/shop" className="cat-link active" style={{ background: 'var(--primary)', color: 'var(--black)', borderRadius: '0', borderBottom: 'none' }}>
             <Menu size={16} className="cat-icon" /> Shop All Departments
           </Link>
-          <Link to="/shop" className="cat-link"><Smartphone size={16} className="cat-icon" /> Phones & Wearables</Link>
-          <Link to="/shop" className="cat-link"><Laptop size={16} className="cat-icon" /> Computing</Link>
-          <Link to="/shop" className="cat-link"><Tv size={16} className="cat-icon" /> TV & Audio</Link>
-          <Link to="/shop" className="cat-link"><Gamepad2 size={16} className="cat-icon" /> Gaming</Link>
-          <Link to="/shop" className="cat-link"><Camera size={16} className="cat-icon" /> Photography</Link>
-          <Link to="/shop" className="cat-link"><HomeIcon size={16} className="cat-icon" /> Home Appliances</Link>
+          {departments.map(dept => (
+            <Link key={dept} to={`/shop?dept=${encodeURIComponent(dept)}`} className="cat-link">
+              {getDeptIcon(dept)} {dept}
+            </Link>
+          ))}
           
           <div style={{ flex: 1 }}></div>
           
@@ -201,12 +225,11 @@ export default function Navbar() {
             
             {/* Categories */}
             <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Menu size={16} /> Shop All Departments</Link>
-            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Smartphone size={16} /> Phones & Wearables</Link>
-            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Laptop size={16} /> Computing</Link>
-            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Tv size={16} /> TV & Audio</Link>
-            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Gamepad2 size={16} /> Gaming</Link>
-            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><Camera size={16} /> Photography</Link>
-            <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)}><HomeIcon size={16} /> Home Appliances</Link>
+            {departments.map(dept => (
+              <Link key={dept} to={`/shop?dept=${encodeURIComponent(dept)}`} onClick={() => setIsMobileMenuOpen(false)}>
+                {React.cloneElement(getDeptIcon(dept), { className: '' })} {dept}
+              </Link>
+            ))}
             
             <div style={{ height: '1px', background: 'var(--dark-border)', margin: '8px 0' }}></div>
             <div style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
