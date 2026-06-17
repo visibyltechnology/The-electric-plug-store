@@ -202,28 +202,13 @@ export default function ProductDetails() {
           )}
 
           <div className="pd-features">
-            {product.features && product.features.length > 0 ? (
+            {product.features && product.features.length > 0 && (
               product.features.map((feat, idx) => (
                 <div key={idx} className="pd-feature">
                   <span className="pd-feature-icon"><CheckCircle2 size={20} /></span>
                   <span>{feat}</span>
                 </div>
               ))
-            ) : (
-              <>
-                <div className="pd-feature">
-                  <span className="pd-feature-icon"><BatteryCharging size={20} /></span>
-                  <span>Up to 30 hours of battery life with quick charging.</span>
-                </div>
-                <div className="pd-feature">
-                  <span className="pd-feature-icon"><MicOff size={20} /></span>
-                  <span>Industry-leading noise cancellation optimized for you.</span>
-                </div>
-                <div className="pd-feature">
-                  <span className="pd-feature-icon"><ShieldCheck size={20} /></span>
-                  <span>1 Year Official Warranty Included.</span>
-                </div>
-              </>
             )}
           </div>
         </div>
