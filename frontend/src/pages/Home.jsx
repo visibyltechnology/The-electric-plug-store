@@ -109,6 +109,17 @@ const ScrollableProductSlider = ({ products }) => {
   );
 };
 
+export default function Home() {
+  const { showToast } = useApp();
+  const [data, setData] = useState({
+    flashSale: [],
+    bestSellers: [],
+    newArrivals: [],
+    recommended: [],
+    featured: [],
+    all: []
+  });
+
   const [heroSlides, setHeroSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
