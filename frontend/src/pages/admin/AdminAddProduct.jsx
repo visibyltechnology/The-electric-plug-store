@@ -40,7 +40,7 @@ export default function AdminAddProduct() {
   const [dragOver, setDragOver] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', department: 'Computing', category: 'Laptops', subcategory: '', brand: '', description: '',
+    name: '', department: '', category: '', subcategory: '', brand: '', description: '',
     overview: '', colors: [], features: [],
     price: '', originalPrice: '', badge: '', stock: 0,
     unlimited_stock: false, is_hidden: false, featured: false, featuredPosition: ''
@@ -113,10 +113,6 @@ export default function AdminAddProduct() {
 
   const taxonomyTree = React.useMemo(() => {
     const tree = {};
-    // Seed with empty defaults for fallback
-    ['Smartphones', 'Laptops', 'Televisions', 'Audio', 'Gaming', 'Accessories', 'Home Appliances'].forEach(c => {
-      tree[c] = {};
-    });
 
     categories.forEach(c => {
       const dept = c.department || c.name;
