@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronRight, Tag, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { categoryTaxonomy } from '../../data/taxonomy';
 import {
-  listenToCategories, addCategory, deleteCategory, updateCategory, DEFAULT_CATEGORIES
+  listenToCategories, addCategory, deleteCategory, updateCategory, seedTaxonomy
 } from '../../utils/catalogService';
 
 // Build initial tree from static taxonomy + any DB additions
@@ -142,6 +142,19 @@ export default function AdminCategories() {
     return c.type === 'department' && c.department === dept;
   });
 
+  const handleSeed = async () => {
+    if (!window.confirm("This will add the default taxonomy to the database. Proceed?")) return;
+    setLoading(true);
+    try {
+      await seedTaxonomy();
+      showToast("Taxonomy seeded successfully!");
+    } catch (e) {
+      showToast("Failed to seed taxonomy", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggle = key => setExpanded(e => ({ ...e, [key]: !e[key] }));
 
   const labelStyle = { fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary)', display: 'block', marginBottom: '8px' };
@@ -155,11 +168,16 @@ export default function AdminCategories() {
         </div>
       )}
 
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Tag size={24} color="var(--primary)" /> Manage Categories
-        </h1>
-        <p style={{ color: 'var(--gray-1)', fontSize: '13px', marginTop: '4px' }}>Build your full Department → Category → Subcategory taxonomy. These appear in the Shop sidebar and Add Product form.</p>
+      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Tag size={24} color="var(--primary)" /> Manage Categories
+          </h1>
+          <p style={{ color: 'var(--gray-1)', fontSize: '13px', marginTop: '4px' }}>Build your full Department → Category → Subcategory taxonomy. These appear in the Shop sidebar and Add Product form.</p>
+        </div>
+        <button onClick={handleSeed} disabled={loading} style={iStyles.btn(loading)}>
+          {loading ? <Loader2 className="spinner" size={14} /> : null} Seed Taxonomy
+        </button>
       </div>
 
       {/* ── ADD FORMS ─────────────────────────────────────────── */}
