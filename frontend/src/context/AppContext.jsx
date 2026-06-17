@@ -21,16 +21,19 @@ export const AppProvider = ({ children }) => {
   };
 
   // For demo, initialize with 2 items in cart and 3 in wishlist to match initial UI loosely
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
-  // Load from localStorage if available (optional, simple version first)
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    const savedWishlist = localStorage.getItem('wishlist');
-    if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-  }, []);
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const saved = localStorage.getItem('wishlist');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
   // Save to local storage on change
   useEffect(() => {
