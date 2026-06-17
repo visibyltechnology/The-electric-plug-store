@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import SEO from '../components/SEO';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export const formatCurrency = (amount) => '₦' + (amount || 0).toLocaleString('en-NG');
 
@@ -107,148 +109,22 @@ const ScrollableProductSlider = ({ products }) => {
   );
 };
 
-const heroSlides = [
-  {
-    id: 1,
-    badge: '🔥 Best Seller',
-    titleLine1: 'iPhone 15 Pro',
-    titleGradient: 'Titanium',
-    titleLine2: ' Beast',
-    desc: 'The most advanced iPhone ever. Pro camera system, A17 Pro chip, USB‑C connectivity.',
-    oldPrice: '₦980,000',
-    newPrice: '₦849,000',
-    img: '/images/phone.png',
-    bgImg: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?q=80&w=1920&auto=format&fit=crop',
-    backdrop: 'PRO',
-    link: '/product/p1',
-    badgeText: 'Top Rated',
-    stars: '★★★★★'
-  },
-  {
-    id: 2,
-    badge: '🎮 New Arrival',
-    titleLine1: 'PlayStation 5',
-    titleGradient: 'Next-Gen',
-    titleLine2: ' Console',
-    desc: 'Experience lightning-fast loading with an ultra-high speed SSD and deeper immersion in gaming.',
-    oldPrice: '₦850,000',
-    newPrice: '₦720,000',
-    img: '/images/ps5.png',
-    bgImg: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?q=80&w=1920&auto=format&fit=crop',
-    backdrop: 'PS5',
-    link: '/shop',
-    badgeText: 'Trending',
-    stars: '★★★★★'
-  },
-  {
-    id: 3,
-    badge: '📺 Hot Deal',
-    titleLine1: 'Samsung 65"',
-    titleGradient: 'Smart',
-    titleLine2: ' 4K TV',
-    desc: 'Quantum processor 4K, Dual LED backlight technology, and Quantum HDR 12x.',
-    oldPrice: '₦1,200,000',
-    newPrice: '₦950,000',
-    img: '/images/tv.png',
-    bgImg: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=1920&auto=format&fit=crop',
-    backdrop: '4K',
-    link: '/shop',
-    badgeText: 'Clearance',
-    stars: '★★★★☆'
-  },
-  {
-    id: 4,
-    badge: '💻 Tech Upgrade',
-    titleLine1: 'MacBook Pro',
-    titleGradient: 'M3 Max',
-    titleLine2: ' Chip',
-    desc: 'Mind-blowing performance, amazing battery life, and a brilliant Liquid Retina XDR display.',
-    oldPrice: '₦2,500,000',
-    newPrice: '₦2,150,000',
-    img: '/images/laptop.png',
-    bgImg: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1920&auto=format&fit=crop',
-    backdrop: 'MAC',
-    link: '/shop',
-    badgeText: 'Premium',
-    stars: '★★★★★'
-  },
-  {
-    id: 5,
-    badge: '🎧 Audio Sale',
-    titleLine1: 'AirPods Pro',
-    titleGradient: 'Noise',
-    titleLine2: ' Cancelling',
-    desc: 'Active Noise Cancellation for immersive sound. Transparency mode for hearing the world around you.',
-    oldPrice: '₦250,000',
-    newPrice: '₦195,000',
-    img: '/images/earbuds.png',
-    bgImg: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=1920&auto=format&fit=crop',
-    backdrop: 'PRO',
-    link: '/shop',
-    badgeText: 'Best Value',
-    stars: '★★★★★'
-  },
-  {
-    id: 6,
-    badge: '📸 Pro Gear',
-    titleLine1: 'Canon EOS R5',
-    titleGradient: 'Mirrorless',
-    titleLine2: ' Camera',
-    desc: 'Professional grade mirrorless camera with 45MP resolution and stunning 8K video capabilities.',
-    oldPrice: '₦3,800,000',
-    newPrice: '₦3,450,000',
-    img: '/images/camera.png',
-    bgImg: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1920&auto=format&fit=crop',
-    backdrop: '8K',
-    link: '/shop',
-    badgeText: 'Creator',
-    stars: '★★★★★'
-  },
-  {
-    id: 7,
-    badge: '📱 Flagship',
-    titleLine1: 'Galaxy S24',
-    titleGradient: 'Ultra',
-    titleLine2: ' AI',
-    desc: 'Welcome to the era of mobile AI. Empower your everyday with Epic new features and titanium finish.',
-    oldPrice: '₦1,450,000',
-    newPrice: '₦1,280,000',
-    img: '/images/phone.png',
-    bgImg: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?q=80&w=1920&auto=format&fit=crop',
-    backdrop: 'AI',
-    link: '/shop',
-    badgeText: 'Top Tier',
-    stars: '★★★★★'
-  },
-  {
-    id: 8,
-    badge: '🕹️ Gaming PC',
-    titleLine1: 'ASUS ROG',
-    titleGradient: 'Strix',
-    titleLine2: ' Laptop',
-    desc: 'Dominate the game with an RTX 4080 GPU, a 240Hz Nebula Display, and liquid metal cooling.',
-    oldPrice: '₦2,800,000',
-    newPrice: '₦2,400,000',
-    img: '/images/laptop.png',
-    bgImg: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?q=80&w=1920&auto=format&fit=crop',
-    backdrop: 'ROG',
-    link: '/shop',
-    badgeText: 'Hardcore',
-    stars: '★★★★★'
-  }
-];
-
-export default function Home() {
-  const { showToast } = useApp();
-  const [data, setData] = useState({
-    flashSale: [],
-    bestSellers: [],
-    newArrivals: [],
-    recommended: [],
-    featured: [],
-    all: []
-  });
+  const [heroSlides, setHeroSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, 'settings', 'site_settings'));
+        if (docSnap.exists() && docSnap.data().heroSlides) {
+          setHeroSlides(docSnap.data().heroSlides);
+        }
+      } catch (err) {
+        console.error('Failed to fetch hero slides', err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -273,11 +149,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (heroSlides.length === 0) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 10000);
     return () => clearInterval(timer);
-  }, [currentSlide]);
+  }, [currentSlide, heroSlides.length]);
   return (
     <main className="main-content" id="main">
       <SEO
@@ -287,81 +164,64 @@ export default function Home() {
       />
 
       {/* ---- HERO SECTION ---- */}
-      <section className="hero-section" aria-label="Featured promotions">
-        <div className="hero-carousel" role="region" aria-label="Hero slideshow">
-          <div className="carousel-track" id="carousel-track" style={{ transform: `translateX(-${currentSlide * (100 / heroSlides.length)}%)`, width: `${heroSlides.length * 100}%` }}>
-            {heroSlides.map((slide, index) => (
-              <div 
-                key={slide.id} 
-                className={`carousel-slide slide-${index + 1} ${currentSlide === index ? 'active' : ''}`} 
-                style={{ 
-                  width: `${100 / heroSlides.length}%`,
-                  backgroundImage: `linear-gradient(to right, rgba(6,6,8,0.95) 0%, rgba(6,6,8,0.85) 40%, rgba(6,6,8,0.4) 100%), url(${slide.bgImg})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              >
-                
-                {/* Animated Background Elements */}
-                <div className="slide-bg-glow"></div>
-                <div className="slide-bg-glow glow-2"></div>
-                
-                <div className="slide-content">
-                  <span className="slide-badge">
-                    <span className="badge-pulse"></span> {slide.badge}
-                  </span>
-                  <h1 className="slide-title">
-                    {slide.titleLine1}<br />
-                    <span className="text-gradient">{slide.titleGradient}</span>{slide.titleLine2}
-                  </h1>
-                  <p className="slide-desc">{slide.desc}</p>
-                  <div className="slide-price-wrap">
-                    <div className="slide-old-price">{slide.oldPrice}</div>
-                    <div className="slide-new-price">{slide.newPrice}</div>
-                  </div>
-                  <div className="slide-actions">
-                    <Link to={slide.link} className="slide-btn primary">
-                      <ShoppingCart size={18} /> Shop Now
-                    </Link>
-                    <Link to={slide.link} className="slide-btn secondary">
-                      Learn More
-                    </Link>
+      {heroSlides.length > 0 && (
+        <section className="hero-section" aria-label="Featured promotions">
+          <div className="hero-carousel" role="region" aria-label="Hero slideshow">
+            <div className="carousel-track" id="carousel-track" style={{ transform: `translateX(-${currentSlide * (100 / heroSlides.length)}%)`, width: `${heroSlides.length * 100}%` }}>
+              {heroSlides.map((slide, index) => (
+                <div 
+                  key={index} 
+                  className={`carousel-slide slide-${index + 1} ${currentSlide === index ? 'active' : ''}`} 
+                  style={{ 
+                    width: `${100 / heroSlides.length}%`,
+                    backgroundImage: `linear-gradient(to right, rgba(6,6,8,0.95) 0%, rgba(6,6,8,0.85) 40%, rgba(6,6,8,0.4) 100%), url(${slide.image})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                >
+                  
+                  {/* Animated Background Elements */}
+                  <div className="slide-bg-glow"></div>
+                  <div className="slide-bg-glow glow-2"></div>
+                  
+                  <div className="slide-content">
+                    <h1 className="slide-title" style={{ fontSize: '42px' }}>
+                      {slide.title}
+                    </h1>
+                    <p className="slide-desc">{slide.subtitle}</p>
+                    <div className="slide-actions">
+                      <Link to={slide.link || '/shop'} className="slide-btn primary">
+                        <ShoppingCart size={18} /> {slide.buttonText || 'Shop Now'}
+                      </Link>
+                    </div>
                   </div>
                 </div>
-                
-                {/* Product Visuals */}
-                <div className="slide-visual-container">
-                  <div className="slide-visual-backdrop">{slide.backdrop}</div>
-                  <img src={slide.img} alt={slide.titleLine1} className="slide-img-main" />
-                  <div className="slide-floating-badge">
-                    <span className="stars">{slide.stars}</span>
-                    <span className="text">{slide.badgeText}</span>
-                  </div>
+              ))}
+            </div>
+
+            {/* Controls */}
+            {heroSlides.length > 1 && (
+              <>
+                <button className="carousel-btn prev" aria-label="Previous slide" onClick={() => setCurrentSlide(prev => (prev === 0 ? heroSlides.length - 1 : prev - 1))}>
+                  <ChevronLeft size={24} />
+                </button>
+                <button className="carousel-btn next" aria-label="Next slide" onClick={() => setCurrentSlide(prev => (prev + 1) % heroSlides.length)}>
+                  <ChevronRight size={24} />
+                </button>
+                <div className="carousel-dots">
+                  {heroSlides.map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`dot ${currentSlide === i ? 'active' : ''}`} 
+                      onClick={() => setCurrentSlide(i)}
+                      role="button"
+                      aria-label={`Go to slide ${i + 1}`}
+                    ></div>
+                  ))}
                 </div>
-
-              </div>
-            ))}
+              </>
+            )}
           </div>
-
-          {/* Controls */}
-          <button className="carousel-btn prev" aria-label="Previous slide" onClick={() => setCurrentSlide(prev => (prev === 0 ? heroSlides.length - 1 : prev - 1))}>
-            <ChevronLeft size={24} />
-          </button>
-          <button className="carousel-btn next" aria-label="Next slide" onClick={() => setCurrentSlide(prev => (prev + 1) % heroSlides.length)}>
-            <ChevronRight size={24} />
-          </button>
-          <div className="carousel-dots">
-            {heroSlides.map((_, i) => (
-              <div 
-                key={i} 
-                className={`dot ${currentSlide === i ? 'active' : ''}`} 
-                onClick={() => setCurrentSlide(i)}
-                role="button"
-                aria-label={`Go to slide ${i + 1}`}
-              ></div>
-            ))}
-          </div>
-        </div>
 
         <aside className="hero-sidebar" aria-label="Promotional banners">
           <Link to="/shop" className="promo-card promo-card-1" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -383,7 +243,8 @@ export default function Home() {
             <div className="promo-cta">View All →</div>
           </Link>
         </aside>
-      </section>
+        </section>
+      )}
 
       {/* ---- QUICK CATEGORIES ---- */}
       <section className="quick-cats section-gap" aria-label="Quick product categories">
