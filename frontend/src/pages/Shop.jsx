@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { getProducts } from '../utils/productService';
+import { listenToCategories } from '../utils/catalogService';
 import { ProductCard } from './Home';
-import { categoryTaxonomy, categorySpecs } from '../data/taxonomy';
+import { categorySpecs } from '../data/taxonomy';
 import { Loader2, SlidersHorizontal, X } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -29,6 +30,35 @@ export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('recommended');
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const unsub = listenToCategories(setCategories);
+    return () => unsub();
+  }, []);
+
+  const taxonomyTree = React.useMemo(() => {
+    const tree = {};
+    categories.forEach(c => {
+      const dept = c.department || c.name;
+      if (!tree[dept]) tree[dept] = {};
+      
+      if (c.type === 'department') return;
+      
+      const cat = c.category;
+      if (cat || c.type === 'category') {
+        const catName = cat || c.name;
+        if (!tree[dept][catName]) tree[dept][catName] = [];
+        
+        if (c.subcategory) {
+          if (!tree[dept][catName].includes(c.subcategory)) {
+            tree[dept][catName].push(c.subcategory);
+          }
+        }
+      }
+    });
+    return tree;
+  }, [categories]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -170,13 +200,13 @@ export default function Shop() {
             <div className="filter-title">Categories</div>
 
             {/* All Products */}
-            <div onClick={() => { setActiveCategory(null); setSelectedFilters({}); }}
+            <div onClick={clearAllFilters}
               style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer', padding: '5px 0', color: !activeCategory ? 'var(--primary)' : 'var(--gray-1)' }}>
               All Products
             </div>
 
             <div className="category-tree" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-              {Object.entries(categoryTaxonomy).map(([dept, cats]) => (
+              {Object.entries(taxonomyTree).map(([dept, cats]) => (
                 <div key={dept} className="tree-dept">
                   <div
                     onClick={() => {
