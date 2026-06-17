@@ -126,7 +126,6 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (dbId, label) => {
-    if (!dbId) return showToast('Cannot delete built-in taxonomy items (hardcoded). Add a custom item to override.', 'error');
     if (!window.confirm(`Delete "${label}"?`)) return;
     setLoading(true);
     try {
@@ -234,7 +233,7 @@ export default function AdminCategories() {
           <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--gray-1)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {allDepts.length} Departments
           </span>
-          <span style={{ fontSize: '11px', color: 'var(--gray-2)' }}>🔒 Built-in &nbsp;·&nbsp; ✏️ Custom (deletable)</span>
+          <span style={{ fontSize: '11px', color: 'var(--gray-2)' }}>All items are deletable</span>
         </div>
 
         {allDepts.map((dept, di) => {
@@ -247,13 +246,10 @@ export default function AdminCategories() {
                 onClick={() => toggle(dept)}>
                 {isExpanded ? <ChevronDown size={15} color="var(--primary)" /> : <ChevronRight size={15} color="var(--primary)" />}
                 <span style={{ fontWeight: 800, fontSize: '14px', flex: 1 }}>{dept}</span>
-                {!deptRec && <span style={{ fontSize: '10px', color: 'var(--gray-2)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '99px' }}>Built-in</span>}
-                {deptRec && (
-                  <button onClick={e => { e.stopPropagation(); handleDelete(deptRec.id, dept); }}
-                    style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,61,0,0.25)', background: 'rgba(255,61,0,0.06)', color: 'var(--danger)', cursor: 'pointer' }}>
-                    <Trash2 size={12} />
-                  </button>
-                )}
+                <button onClick={e => { e.stopPropagation(); handleDelete(deptRec?.id, dept); }}
+                  style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,61,0,0.25)', background: 'rgba(255,61,0,0.06)', color: 'var(--danger)', cursor: 'pointer' }}>
+                  <Trash2 size={12} />
+                </button>
               </div>
 
               {/* Categories */}
@@ -268,13 +264,10 @@ export default function AdminCategories() {
                       {catExpanded ? <ChevronDown size={13} color="#7c3aed" /> : <ChevronRight size={13} color="#7c3aed" />}
                       <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--gray-1)', flex: 1 }}>{cat}</span>
                       <span style={{ fontSize: '11px', color: 'var(--gray-2)' }}>{subs.length} sub</span>
-                      {!catRec && <span style={{ fontSize: '10px', color: 'var(--gray-2)', background: 'rgba(255,255,255,0.05)', padding: '2px 7px', borderRadius: '99px' }}>Built-in</span>}
-                      {catRec && (
-                        <button onClick={e => { e.stopPropagation(); handleDelete(catRec.id, cat); }}
-                          style={{ width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,61,0,0.25)', background: 'rgba(255,61,0,0.06)', color: 'var(--danger)', cursor: 'pointer' }}>
-                          <Trash2 size={11} />
-                        </button>
-                      )}
+                      <button onClick={e => { e.stopPropagation(); handleDelete(catRec?.id, cat); }}
+                        style={{ width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,61,0,0.25)', background: 'rgba(255,61,0,0.06)', color: 'var(--danger)', cursor: 'pointer' }}>
+                        <Trash2 size={11} />
+                      </button>
                     </div>
 
                     {/* Subcategories */}
@@ -284,13 +277,10 @@ export default function AdminCategories() {
                         <div key={sub} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 20px 7px 64px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
                           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
                           <span style={{ fontSize: '12px', color: 'var(--gray-2)', flex: 1 }}>{sub}</span>
-                          {!subRec && <span style={{ fontSize: '10px', color: 'var(--gray-2)', background: 'rgba(255,255,255,0.05)', padding: '2px 7px', borderRadius: '99px' }}>Built-in</span>}
-                          {subRec && (
-                            <button onClick={() => handleDelete(subRec.id, sub)}
-                              style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,61,0,0.25)', background: 'rgba(255,61,0,0.06)', color: 'var(--danger)', cursor: 'pointer' }}>
-                              <Trash2 size={10} />
-                            </button>
-                          )}
+                          <button onClick={() => handleDelete(subRec?.id, sub)}
+                            style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,61,0,0.25)', background: 'rgba(255,61,0,0.06)', color: 'var(--danger)', cursor: 'pointer' }}>
+                            <Trash2 size={10} />
+                          </button>
                         </div>
                       );
                     })}
@@ -302,9 +292,7 @@ export default function AdminCategories() {
         })}
       </div>
 
-      <div style={{ marginTop: '16px', padding: '14px 18px', background: 'rgba(255,206,30,0.06)', border: '1px solid rgba(255,206,30,0.2)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--warning)', fontWeight: 600 }}>
-        ⚡ Built-in items come from the hardcoded taxonomy and can't be deleted here. Custom items you add above are deletable. All appear in the Shop sidebar and Add Product form.
-      </div>
+
     </div>
   );
 }

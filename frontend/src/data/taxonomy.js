@@ -1,34 +1,5 @@
 // Full taxonomy with Department > Category > Subcategory hierarchy
-export const categoryTaxonomy = {
-  Computing: {
-    'Computers & Desktops': ['Desktops', 'All-In-One PCs', 'Mini PCs'],
-    'Laptops': ['Ultrabooks', 'Gaming Laptops', '2-in-1 Convertibles', 'MacBooks'],
-    'Tablets & iPads': ['iOS Tablets', 'Android Tablets', 'e-Readers'],
-    'Computer Accessories': ['Monitors', 'Keyboards & Mice', 'Components']
-  },
-  'Phones & Wearables': {
-    'Smartphones': ['Android Phones', 'iPhones', 'Feature Phones'],
-    'Smartwatches & Wearables': ['Smartwatches', 'Fitness Trackers'],
-    'Mobile Accessories': ['Cases', 'Power Banks', 'Cables']
-  },
-  'TV, Audio & Home Theater': {
-    'Televisions': ['Smart TVs', 'Projectors'],
-    'Audio': ['True Wireless Earbuds', 'Over-Ear Headphones', 'Bluetooth Speakers', 'Home Theater Systems']
-  },
-  'Cameras & Photography': {
-    'Cameras': ['DSLR & Mirrorless', 'Point & Shoot', 'Action Cameras'],
-    'Drones & Accessories': ['Drones', 'Lenses', 'Tripods']
-  },
-  Gaming: {
-    'Consoles': ['PlayStation', 'Xbox', 'Nintendo'],
-    'Accessories': ['Controllers', 'Gaming Headsets'],
-    'Video Games': ['PS5 Games', 'Xbox Games', 'Nintendo Games']
-  },
-  'Home & Office Appliances': {
-    'Large Appliances': ['Refrigerators', 'Washing Machines', 'Air Conditioners'],
-    'Small Kitchen Appliances': ['Microwaves', 'Air Fryers', 'Blenders']
-  }
-};
+export const categoryTaxonomy = {};
 
 // ─── Spec schema per category ─────────────────────────────────────────────────
 // Each field: { id, label, type: 'text'|'select'|'number', options?, unit?, optional? }
