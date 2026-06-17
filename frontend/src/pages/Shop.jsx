@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { allProducts as staticProducts } from '../data/productData';
+
 import { getProducts } from '../utils/productService';
 import { ProductCard } from './Home';
 import { categoryTaxonomy, categorySpecs } from '../data/taxonomy';
@@ -35,9 +35,9 @@ export default function Shop() {
       setLoading(true);
       try {
         const fp = await getProducts();
-        setProducts(fp.length === 0 ? staticProducts : fp);
+        setProducts(fp);
       } catch {
-        setProducts(staticProducts);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
