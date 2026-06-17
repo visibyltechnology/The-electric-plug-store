@@ -2,15 +2,28 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Zap, SendHorizonal } from 'lucide-react';
 
+import { auth } from '../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSent(true); }, 1500);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSent(true);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to send reset email. Please verify your email address and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,11 +47,16 @@ export default function ForgotPassword() {
               <div style={{ textAlign: 'center' }}>
                 <SendHorizonal size={64} color="var(--success)" strokeWidth={1.5} style={{ margin: '0 auto 16px' }} />
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 800, color: 'var(--success)', marginBottom: '8px' }}>Reset Link Sent!</h3>
-                <p style={{ color: 'var(--gray-1)', marginBottom: '24px', fontSize: '14px' }}>Check your inbox at <strong style={{ color: 'var(--white)' }}>{email}</strong>. Don't forget to check your spam folder.</p>
+                <p style={{ color: 'var(--gray-1)', marginBottom: '24px', fontSize: '14px' }}>Check your inbox at <strong style={{ color: 'var(--white)' }}>{email}</strong>.<br/><br/><strong style={{ color: 'var(--warning)', fontSize: '15px' }}>Important: Please check your spam or junk folder just in case!</strong></p>
                 <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 700 }}><ArrowLeft size={16} /> Back to Login</Link>
               </div>
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {error && (
+                  <div style={{ background: 'rgba(255,61,0,0.1)', border: '1px solid var(--danger)', color: '#ff8066', padding: '12px 16px', borderRadius: 'var(--radius-sm)', fontSize: '13px', fontWeight: 600 }}>
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--gray-1)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email Address</label>
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com"
