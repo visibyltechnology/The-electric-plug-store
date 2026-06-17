@@ -111,16 +111,44 @@ export default function AdminAddProduct() {
     fetchFeatured();
   }, []);
 
+  const taxonomyTree = React.useMemo(() => {
+    const tree = {};
+    // Seed with empty defaults for fallback
+    ['Smartphones', 'Laptops', 'Televisions', 'Audio', 'Gaming', 'Accessories', 'Home Appliances'].forEach(c => {
+      tree[c] = {};
+    });
+
+    categories.forEach(c => {
+      const dept = c.department || c.name;
+      if (!tree[dept]) tree[dept] = {};
+      
+      if (c.type === 'department') return;
+      
+      const cat = c.category;
+      if (cat || c.type === 'category') {
+        const catName = cat || c.name;
+        if (!tree[dept][catName]) tree[dept][catName] = [];
+        
+        if (c.subcategory) {
+          if (!tree[dept][catName].includes(c.subcategory)) {
+            tree[dept][catName].push(c.subcategory);
+          }
+        }
+      }
+    });
+    return tree;
+  }, [categories]);
+
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(p => {
       const updated = { ...p, [name]: type === 'checkbox' ? checked : value };
       if (name === 'department') {
-        updated.category = categoryTaxonomy[value] ? Object.keys(categoryTaxonomy[value])[0] || '' : '';
-        updated.subcategory = categoryTaxonomy[value]?.[updated.category]?.[0] || '';
+        updated.category = taxonomyTree[value] ? Object.keys(taxonomyTree[value])[0] || '' : '';
+        updated.subcategory = taxonomyTree[value]?.[updated.category]?.[0] || '';
       }
       if (name === 'category') {
-        updated.subcategory = categoryTaxonomy[p.department]?.[value]?.[0] || '';
+        updated.subcategory = taxonomyTree[p.department]?.[value]?.[0] || '';
       }
       return updated;
     });
@@ -371,29 +399,29 @@ export default function AdminAddProduct() {
                 <select name="department" value={formData.department} onChange={handleChange} style={inputStyle}
                   onFocus={e => e.target.style.borderColor = '#7c3aed'} onBlur={e => e.target.style.borderColor = 'var(--dark-border)'}>
                   <option value="" disabled>Select department...</option>
-                  {Array.from(new Set([...Object.keys(categoryTaxonomy), ...categories.map(c => c.name)])).map(dept => (
+                  {Object.keys(taxonomyTree).map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
               </FieldGroup>
               <FieldGroup label="Category" icon={<Tag size={12} />} accent="#7c3aed">
                 <select name="category" value={formData.category} onChange={handleChange}
-                  disabled={!categoryTaxonomy[formData.department]}
-                  style={{ ...inputStyle, opacity: !categoryTaxonomy[formData.department] ? 0.5 : 1 }}
+                  disabled={!taxonomyTree[formData.department] || Object.keys(taxonomyTree[formData.department]).length === 0}
+                  style={{ ...inputStyle, opacity: (!taxonomyTree[formData.department] || Object.keys(taxonomyTree[formData.department]).length === 0) ? 0.5 : 1 }}
                   onFocus={e => e.target.style.borderColor = '#7c3aed'} onBlur={e => e.target.style.borderColor = 'var(--dark-border)'}>
                   <option value="">— No Category —</option>
-                  {categoryTaxonomy[formData.department] && Object.keys(categoryTaxonomy[formData.department]).map(c => (
+                  {taxonomyTree[formData.department] && Object.keys(taxonomyTree[formData.department]).map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </FieldGroup>
               <FieldGroup label="Subcategory" icon={<Tag size={12} />} accent="#7c3aed">
                 <select name="subcategory" value={formData.subcategory} onChange={handleChange}
-                  disabled={!categoryTaxonomy[formData.department]?.[formData.category]}
-                  style={{ ...inputStyle, opacity: !categoryTaxonomy[formData.department]?.[formData.category] ? 0.5 : 1 }}
+                  disabled={!taxonomyTree[formData.department]?.[formData.category] || taxonomyTree[formData.department]?.[formData.category]?.length === 0}
+                  style={{ ...inputStyle, opacity: (!taxonomyTree[formData.department]?.[formData.category] || taxonomyTree[formData.department]?.[formData.category]?.length === 0) ? 0.5 : 1 }}
                   onFocus={e => e.target.style.borderColor = '#7c3aed'} onBlur={e => e.target.style.borderColor = 'var(--dark-border)'}>
                   <option value="">— No Subcategory —</option>
-                  {categoryTaxonomy[formData.department]?.[formData.category]?.map(sub => (
+                  {taxonomyTree[formData.department]?.[formData.category]?.map(sub => (
                     <option key={sub} value={sub}>{sub}</option>
                   ))}
                 </select>
