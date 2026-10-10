@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "https://midnight-pine-store.vercel.app/$1"
+    }
+  ]
+}
